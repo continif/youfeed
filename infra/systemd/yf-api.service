@@ -1,0 +1,32 @@
+[Unit]
+Description=YOUFEED API (FastAPI + Uvicorn)
+After=network.target postgresql.service redis-server.service manticore.service
+Wants=postgresql.service redis-server.service manticore.service
+
+[Service]
+Type=simple
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed/backend
+EnvironmentFile=/opt/youfeed/.env
+ExecStart=/opt/youfeed/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 4 \
+    --proxy-headers \
+    --forwarded-allow-ips "127.0.0.1"
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/youfeed /var/log/youfeed
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

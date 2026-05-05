@@ -1,0 +1,397 @@
+# Wordforms italiani per Manticore.
+# Sintassi: "<forma flessa> > <lemma>"  (un mapping per riga).
+# Riferimento: https://manual.manticoresearch.com/Creating_a_table/NLP_and_tokenization/Wordforms
+#
+# Compensa i limiti del libstemmer Snowball italiano sulle irregolarità più
+# frequenti (verbi essere/avere/andare/fare/dare/dire/stare + sostantivi
+# irregolari + plurali "anomali"). Espandere quando emergono casi reali.
+#
+# In v1.2 il content_text verrà pre-lemmatizzato lato app con spaCy: questo
+# file rimarrà come safety-net e per casi che spaCy può sbagliare.
+
+# ---------------------------------------------------------------
+# Verbo ESSERE
+# ---------------------------------------------------------------
+sono > essere
+sei > essere
+e > essere
+è > essere
+siamo > essere
+siete > essere
+ero > essere
+eri > essere
+era > essere
+eravamo > essere
+eravate > essere
+erano > essere
+fu > essere
+fui > essere
+fosti > essere
+fummo > essere
+foste > essere
+furono > essere
+saro > essere
+sarò > essere
+sarai > essere
+sara > essere
+sarà > essere
+saremo > essere
+sarete > essere
+saranno > essere
+sia > essere
+siano > essere
+fossi > essere
+fosse > essere
+fossimo > essere
+foste > essere
+fossero > essere
+stato > essere
+stata > essere
+stati > essere
+state > essere
+
+# ---------------------------------------------------------------
+# Verbo AVERE
+# ---------------------------------------------------------------
+ho > avere
+hai > avere
+ha > avere
+abbiamo > avere
+avete > avere
+hanno > avere
+avevo > avere
+avevi > avere
+aveva > avere
+avevamo > avere
+avevate > avere
+avevano > avere
+ebbi > avere
+avesti > avere
+ebbe > avere
+avemmo > avere
+aveste > avere
+ebbero > avere
+avro > avere
+avrò > avere
+avrai > avere
+avra > avere
+avrà > avere
+avremo > avere
+avrete > avere
+avranno > avere
+abbia > avere
+abbiate > avere
+abbiano > avere
+avessi > avere
+avesse > avere
+avessimo > avere
+aveste > avere
+avessero > avere
+avuto > avere
+avuta > avere
+avuti > avere
+avute > avere
+
+# ---------------------------------------------------------------
+# Verbo ANDARE
+# ---------------------------------------------------------------
+vado > andare
+vai > andare
+va > andare
+vanno > andare
+andiamo > andare
+andate > andare
+andavo > andare
+andavi > andare
+andava > andare
+andavamo > andare
+andavate > andare
+andavano > andare
+andai > andare
+andasti > andare
+ando > andare
+andò > andare
+andammo > andare
+andaste > andare
+andarono > andare
+andro > andare
+andrò > andare
+andrai > andare
+andra > andare
+andrà > andare
+andremo > andare
+andrete > andare
+andranno > andare
+andato > andare
+andata > andare
+andati > andare
+
+# ---------------------------------------------------------------
+# Verbo FARE
+# ---------------------------------------------------------------
+faccio > fare
+fai > fare
+fa > fare
+facciamo > fare
+fate > fare
+fanno > fare
+facevo > fare
+facevi > fare
+faceva > fare
+facevamo > fare
+facevate > fare
+facevano > fare
+feci > fare
+facesti > fare
+fece > fare
+facemmo > fare
+faceste > fare
+fecero > fare
+faro > fare
+farò > fare
+farai > fare
+fara > fare
+farà > fare
+faremo > fare
+farete > fare
+faranno > fare
+fatto > fare
+fatta > fare
+fatti > fare
+fatte > fare
+
+# ---------------------------------------------------------------
+# Verbo DIRE
+# ---------------------------------------------------------------
+dico > dire
+dici > dire
+dice > dire
+diciamo > dire
+dite > dire
+dicono > dire
+dicevo > dire
+dicevi > dire
+diceva > dire
+dicevamo > dire
+dicevate > dire
+dicevano > dire
+dissi > dire
+dicesti > dire
+disse > dire
+dicemmo > dire
+diceste > dire
+dissero > dire
+diro > dire
+dirò > dire
+dirai > dire
+dira > dire
+dirà > dire
+diremo > dire
+direte > dire
+diranno > dire
+detto > dire
+detta > dire
+detti > dire
+dette > dire
+
+# ---------------------------------------------------------------
+# Verbo DARE
+# ---------------------------------------------------------------
+do > dare
+dai > dare
+da > dare
+diamo > dare
+date > dare
+danno > dare
+davo > dare
+davi > dare
+dava > dare
+davamo > dare
+davate > dare
+davano > dare
+diedi > dare
+desti > dare
+diede > dare
+demmo > dare
+deste > dare
+diedero > dare
+daro > dare
+darò > dare
+darai > dare
+dara > dare
+darà > dare
+daremo > dare
+darete > dare
+daranno > dare
+dato > dare
+data > dare
+dati > dare
+date > dare
+
+# ---------------------------------------------------------------
+# Verbo STARE
+# ---------------------------------------------------------------
+sto > stare
+stai > stare
+sta > stare
+stiamo > stare
+state > stare
+stanno > stare
+stavo > stare
+stavi > stare
+stava > stare
+stavamo > stare
+stavate > stare
+stavano > stare
+stetti > stare
+stesti > stare
+stette > stare
+stemmo > stare
+steste > stare
+stettero > stare
+staro > stare
+starò > stare
+starai > stare
+stara > stare
+starà > stare
+staremo > stare
+starete > stare
+staranno > stare
+
+# ---------------------------------------------------------------
+# Verbo VEDERE
+# ---------------------------------------------------------------
+visto > vedere
+vista > vedere
+visti > vedere
+viste > vedere
+veduto > vedere
+veduta > vedere
+veduti > vedere
+vedute > vedere
+vidi > vedere
+vedesti > vedere
+vide > vedere
+vedemmo > vedere
+vedeste > vedere
+videro > vedere
+
+# ---------------------------------------------------------------
+# Verbo VENIRE
+# ---------------------------------------------------------------
+vengo > venire
+vieni > venire
+viene > venire
+veniamo > venire
+venite > venire
+vengono > venire
+venni > venire
+venisti > venire
+venne > venire
+venimmo > venire
+veniste > venire
+vennero > venire
+verro > venire
+verrò > venire
+verrai > venire
+verra > venire
+verrà > venire
+verremo > venire
+verrete > venire
+verranno > venire
+venuto > venire
+venuta > venire
+venuti > venire
+venute > venire
+
+# ---------------------------------------------------------------
+# Verbo POTERE
+# ---------------------------------------------------------------
+posso > potere
+puoi > potere
+puo > potere
+può > potere
+possiamo > potere
+potete > potere
+possono > potere
+potro > potere
+potrò > potere
+potrai > potere
+potra > potere
+potrà > potere
+potremo > potere
+potrete > potere
+potranno > potere
+
+# ---------------------------------------------------------------
+# Verbo VOLERE
+# ---------------------------------------------------------------
+voglio > volere
+vuoi > volere
+vuole > volere
+vogliamo > volere
+volete > volere
+vogliono > volere
+volli > volere
+volle > volere
+vollero > volere
+vorro > volere
+vorrò > volere
+vorrai > volere
+vorra > volere
+vorrà > volere
+vorremo > volere
+vorrete > volere
+vorranno > volere
+voluto > volere
+voluta > volere
+voluti > volere
+volute > volere
+
+# ---------------------------------------------------------------
+# Verbo SAPERE
+# ---------------------------------------------------------------
+so > sapere
+sai > sapere
+sa > sapere
+sappiamo > sapere
+sapete > sapere
+sanno > sapere
+seppi > sapere
+sapesti > sapere
+seppe > sapere
+sapemmo > sapere
+sapeste > sapere
+seppero > sapere
+sapro > sapere
+saprò > sapere
+saprai > sapere
+sapra > sapere
+saprà > sapere
+sapremo > sapere
+saprete > sapere
+sapranno > sapere
+saputo > sapere
+
+# ---------------------------------------------------------------
+# Sostantivi/aggettivi irregolari frequenti
+# ---------------------------------------------------------------
+uomo > uomo
+uomini > uomo
+dito > dito
+dita > dito
+braccio > braccio
+braccia > braccio
+ginocchio > ginocchio
+ginocchia > ginocchio
+ciglio > ciglio
+ciglia > ciglio
+labbro > labbro
+labbra > labbro
+osso > osso
+ossa > osso
+mille > mille
+mila > mille
+
+# Espandere con altri verbi irregolari (mettere, prendere, scegliere, ecc.)
+# e con plurali anomali quando emergono nei testi reali.

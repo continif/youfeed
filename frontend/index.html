@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <title>YOUFEED</title>
+
+    <!--
+      Theme init: applichiamo la classe "dark" PRIMA del mount Vue per evitare
+      un flash di tema sbagliato (FOIT). Lo stesso script va replicato nel
+      base.html dei template Jinja, così la coerenza vale anche attraversando
+      il confine SPA <-> server-rendered.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("yf_theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var dark = stored === "dark" || (stored !== "light" && prefersDark);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {
+          /* localStorage può essere bloccato; ignoriamo */
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-white text-slate-900 antialiased dark:bg-slate-900 dark:text-slate-100">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

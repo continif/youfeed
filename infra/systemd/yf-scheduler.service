@@ -1,0 +1,26 @@
+[Unit]
+Description=YOUFEED ingestion scheduler (RQ scheduler tick)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed/backend
+EnvironmentFile=/opt/youfeed/.env
+ExecStart=/opt/youfeed/.venv/bin/python -m app.workers.scheduler
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/youfeed /var/log/youfeed
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+Ciao {{ username }},
+
+grazie per esserti registrato a {{ site_name }}.
+
+Per attivare il tuo account conferma il tuo indirizzo email visitando questo link:
+
+{{ link }}
+
+Il link è valido per 48 ore.
+
+Se non hai richiesto la registrazione, puoi ignorare questa email.
+
+— {{ site_name }}

@@ -1,0 +1,56 @@
+# Categorie suggerite proposte all'utente nel tour di onboarding.
+# L'utente seleziona quelle che gli interessano (anche zero) — diventano
+# categorie effettive nel suo albero. Nessuna è creata automaticamente.
+#
+# Lista hardcoded letta dal frontend tramite endpoint statico
+# (alternativa: import diretto in src/data/suggested_categories.ts).
+
+- slug: politica
+  name: Politica
+  description: Notizie politiche italiane e internazionali
+  default_color: "#dc2626"   # red-600
+
+- slug: cronaca
+  name: Cronaca
+  description: Cronaca nazionale e locale
+  default_color: "#0ea5e9"   # sky-500
+
+- slug: sport
+  name: Sport
+  description: Calcio, motori, tennis, basket, eventi sportivi
+  default_color: "#16a34a"   # green-600
+
+- slug: tecnologia
+  name: Tecnologia
+  description: Tech, startup, AI, gadget
+  default_color: "#7c3aed"   # violet-600
+
+- slug: economia
+  name: Economia
+  description: Mercati, finanza, lavoro, imprese
+  default_color: "#ca8a04"   # yellow-600
+
+- slug: cultura
+  name: Cultura
+  description: Libri, mostre, eventi culturali
+  default_color: "#9333ea"   # purple-600
+
+- slug: spettacolo
+  name: Spettacolo
+  description: Cinema, TV, musica, gossip
+  default_color: "#ec4899"   # pink-500
+
+- slug: esteri
+  name: Esteri
+  description: Politica internazionale, geopolitica, conflitti
+  default_color: "#0891b2"   # cyan-600
+
+- slug: salute
+  name: Salute
+  description: Medicina, benessere, alimentazione
+  default_color: "#10b981"   # emerald-500
+
+- slug: motori
+  name: Motori
+  description: Auto, moto, F1, MotoGP
+  default_color: "#475569"   # slate-600

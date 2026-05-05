@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Self-hosted fonts. Da popolare quando i file .woff2 saranno in src/assets/fonts/. */
+/*
+@font-face {
+  font-family: "Inter";
+  src: url("/src/assets/fonts/Inter-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
+/* Smooth scroll su anchor link interni */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Migliorie a11y: outline visibile solo su keyboard nav */
+:focus:not(:focus-visible) {
+  outline: none;
+}

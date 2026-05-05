@@ -1,0 +1,190 @@
+# Featured sources — fonti italiane popolari pre-curate per la
+# <FeaturedSourcesGallery>. Lista *starter* con i nomi più noti; espandere
+# in fase di produzione. NB: gli URL feed/wp_api_root vanno ri-validati con
+# discovery prima di essere considerati "qualified" — questa lista esiste
+# solo per evitare di partire da zero.
+#
+# Schema: vedi infra/seed/README.md
+
+- slug: repubblica
+  display_name: la Repubblica
+  description: Quotidiano nazionale, area progressista
+  url_site: https://www.repubblica.it
+  url_feed: https://www.repubblica.it/rss/homepage/rss2.0.xml
+  category_hint: cronaca
+  position: 10
+
+- slug: corriere
+  display_name: Corriere della Sera
+  description: Quotidiano nazionale, area moderata
+  url_site: https://www.corriere.it
+  url_feed: https://xml2.corriereobjects.it/rss/homepage.xml
+  category_hint: cronaca
+  position: 20
+
+- slug: ansa
+  display_name: ANSA
+  description: Agenzia di stampa nazionale
+  url_site: https://www.ansa.it
+  url_feed: https://www.ansa.it/sito/ansait_rss.xml
+  category_hint: cronaca
+  position: 30
+
+- slug: lastampa
+  display_name: La Stampa
+  description: Quotidiano di Torino, area progressista
+  url_site: https://www.lastampa.it
+  url_feed: https://www.lastampa.it/rss/homepage.xml
+  category_hint: cronaca
+  position: 40
+
+- slug: ilsole24ore
+  display_name: Il Sole 24 Ore
+  description: Quotidiano economico-finanziario
+  url_site: https://www.ilsole24ore.com
+  url_feed: https://www.ilsole24ore.com/rss/italia.xml
+  category_hint: economia
+  position: 10
+
+- slug: ilfoglio
+  display_name: Il Foglio
+  description: Quotidiano di opinione
+  url_site: https://www.ilfoglio.it
+  url_feed: https://www.ilfoglio.it/rss.xml
+  category_hint: politica
+  position: 10
+
+- slug: ilfattoquotidiano
+  display_name: Il Fatto Quotidiano
+  description: Quotidiano nazionale
+  url_site: https://www.ilfattoquotidiano.it
+  wp_api_root: https://www.ilfattoquotidiano.it/wp-json/wp/v2
+  category_hint: politica
+  position: 20
+
+- slug: ilpost
+  display_name: Il Post
+  description: Quotidiano online di approfondimento
+  url_site: https://www.ilpost.it
+  wp_api_root: https://www.ilpost.it/wp-json/wp/v2
+  category_hint: cronaca
+  position: 50
+
+- slug: open
+  display_name: Open
+  description: Quotidiano online
+  url_site: https://www.open.online
+  url_feed: https://www.open.online/feed/
+  category_hint: cronaca
+  position: 60
+
+- slug: skytg24
+  display_name: Sky TG24
+  description: Notizie da Sky TG24
+  url_site: https://tg24.sky.it
+  url_feed: https://tg24.sky.it/rss/tg24.xml
+  category_hint: cronaca
+  position: 70
+
+- slug: rainews
+  display_name: Rai News
+  description: Notizie dal servizio pubblico
+  url_site: https://www.rainews.it
+  url_feed: https://www.rainews.it/rss
+  category_hint: cronaca
+  position: 80
+
+# Sport
+- slug: gazzetta
+  display_name: La Gazzetta dello Sport
+  description: Quotidiano sportivo
+  url_site: https://www.gazzetta.it
+  url_feed: https://www.gazzetta.it/rss/home.xml
+  category_hint: sport
+  position: 10
+
+- slug: corrieredellosport
+  display_name: Corriere dello Sport
+  description: Quotidiano sportivo
+  url_site: https://www.corrieredellosport.it
+  url_feed: https://www.corrieredellosport.it/rss/home.xml
+  category_hint: sport
+  position: 20
+
+# Tech
+- slug: wireditalia
+  display_name: Wired Italia
+  description: Tech, scienza, cultura digitale
+  url_site: https://www.wired.it
+  wp_api_root: https://www.wired.it/wp-json/wp/v2
+  category_hint: tecnologia
+  position: 10
+
+- slug: dday
+  display_name: DDay.it
+  description: Tecnologia, gadget, recensioni
+  url_site: https://www.dday.it
+  url_feed: https://www.dday.it/feed
+  category_hint: tecnologia
+  position: 20
+
+- slug: hdblog
+  display_name: HDBlog
+  description: Smartphone, gadget, mobile
+  url_site: https://www.hdblog.it
+  url_feed: https://www.hdblog.it/feed/
+  category_hint: tecnologia
+  position: 30
+
+# Economia / business
+- slug: milanofinanza
+  display_name: Milano Finanza
+  description: Finanza e mercati
+  url_site: https://www.milanofinanza.it
+  url_feed: https://www.milanofinanza.it/rss
+  category_hint: economia
+  position: 20
+
+# Esteri
+- slug: limesonline
+  display_name: Limes
+  description: Geopolitica
+  url_site: https://www.limesonline.com
+  wp_api_root: https://www.limesonline.com/wp-json/wp/v2
+  category_hint: esteri
+  position: 10
+
+# Cultura / spettacolo
+- slug: ilibri
+  display_name: Il Libraio
+  description: Libri, recensioni, autori
+  url_site: https://www.illibraio.it
+  wp_api_root: https://www.illibraio.it/wp-json/wp/v2
+  category_hint: cultura
+  position: 10
+
+# Salute
+- slug: fondazioneveronesi
+  display_name: Fondazione Veronesi Magazine
+  description: Salute, ricerca medica, prevenzione
+  url_site: https://www.fondazioneveronesi.it
+  url_feed: https://www.fondazioneveronesi.it/magazine/rss
+  category_hint: salute
+  position: 10
+
+# Motori
+- slug: quattroruote
+  display_name: Quattroruote
+  description: Auto, prove, novità
+  url_site: https://www.quattroruote.it
+  url_feed: https://www.quattroruote.it/rss
+  category_hint: motori
+  position: 10
+
+# TODO (lista da espandere fino a ~30-50):
+# - Il Manifesto, Avvenire, Domani, Linkiesta, Valigia Blu
+# - HuffPost Italia, Today.it, Fanpage
+# - Tom's Hardware Italia, Punto Informatico, Webnews
+# - Repubblica Sport, Sportmediaset, Tuttosport
+# - Ricetteonline, GialloZafferano (lifestyle)
+# - Le Scienze, Focus (scienza)

@@ -1,0 +1,13 @@
+{% extends "_base.html" %}
+{% block subject %}Verifica il tuo indirizzo email{% endblock %}
+{% block body %}
+  <p>Ciao <strong>{{ username }}</strong>,</p>
+  <p>grazie per esserti registrato a {{ site_name }}. Per attivare il tuo account conferma il tuo indirizzo email cliccando sul pulsante qui sotto.</p>
+  <p style="margin: 24px 0;">
+    <a class="button" href="{{ link }}">Verifica email</a>
+  </p>
+  <p class="small">Se il pulsante non funziona, copia e incolla questo link nel browser:<br>
+    <a href="{{ link }}">{{ link }}</a>
+  </p>
+  <p class="small">Il link è valido per 48 ore.</p>
+{% endblock %}

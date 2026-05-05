@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:manual.manticoresearch.com)",
+      "Bash(python3 -m compileall -q app/ tests/)"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+# Servizi di supporto per lo sviluppo locale.
+# In produzione tutti i componenti girano direttamente su Ubuntu (vedi
+# Claude/ARCHITECTURE.md → Hosting e deployment), questo file serve solo
+# allo sviluppo sulla macchina locale.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: youfeed
+      POSTGRES_PASSWORD: youfeed
+      POSTGRES_DB: youfeed
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - yf-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youfeed -d youfeed"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: yf-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - yf-redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  manticore:
+    image: manticoresearch/manticore:6.3.6
+    container_name: yf-manticore
+    restart: unless-stopped
+    environment:
+      EXTRA: "1"
+    ports:
+      - "127.0.0.1:9306:9306"   # SQL (MySQL protocol)
+      - "127.0.0.1:9308:9308"   # HTTP/JSON
+    volumes:
+      - yf-manticore-data:/var/lib/manticore
+      - ./infra/manticore/manticore.conf:/etc/manticoresearch/manticore.conf:ro
+      - ./data/wordforms:/usr/share/manticore/wordforms:ro
+      - ./data/stopwords:/usr/share/manticore/stopwords:ro
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+
+volumes:
+  yf-postgres-data:
+  yf-redis-data:
+  yf-manticore-data:

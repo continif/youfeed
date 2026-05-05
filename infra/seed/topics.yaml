@@ -1,0 +1,389 @@
+# Topic curated seed — entità riconosciute dal classifier "dictionary" in v1.0.
+# Schema:
+#   slug: identifier univoco URL-safe
+#   type: brand | person | subject
+#   display_name: forma canonica
+#   aliases: forme alternative (case-insensitive, già normalizzate)
+#   description: breve, opzionale (verrà sovrascritta dall'enrichment Wikidata in v1.2)
+#   wikidata: Q-id se nota (popolerà topics.external_refs.wikidata)
+#
+# Lista *starter* — qui ~70 entry ad alta visibilità per partire. La produzione
+# v1.0 richiede 200-500 entry. Espandere a mano (calciatori, politici, brand
+# IT, programmi TV, conduttori, ecc.) o via export Wikidata + revisione.
+
+# ============================================================
+# CALCIO — squadre Serie A 2024/25
+# ============================================================
+- slug: inter
+  type: brand
+  display_name: Inter
+  aliases: ["FC Internazionale", "Internazionale Milano", "i nerazzurri", "neroazzurri"]
+  wikidata: Q631
+
+- slug: juventus
+  type: brand
+  display_name: Juventus
+  aliases: ["Juventus FC", "i bianconeri", "la Vecchia Signora"]
+  wikidata: Q1495
+
+- slug: milan
+  type: brand
+  display_name: Milan
+  aliases: ["AC Milan", "Associazione Calcio Milan", "i rossoneri"]
+  wikidata: Q1543
+
+- slug: napoli
+  type: brand
+  display_name: Napoli
+  aliases: ["SSC Napoli", "Società Sportiva Calcio Napoli", "gli azzurri"]
+  wikidata: Q4253
+
+- slug: roma
+  type: brand
+  display_name: Roma
+  aliases: ["AS Roma", "Associazione Sportiva Roma", "i giallorossi"]
+  wikidata: Q4884
+
+- slug: lazio
+  type: brand
+  display_name: Lazio
+  aliases: ["SS Lazio", "Società Sportiva Lazio", "i biancocelesti"]
+  wikidata: Q4644
+
+- slug: fiorentina
+  type: brand
+  display_name: Fiorentina
+  aliases: ["ACF Fiorentina", "i viola"]
+  wikidata: Q3287
+
+- slug: atalanta
+  type: brand
+  display_name: Atalanta
+  aliases: ["Atalanta BC", "i nerazzurri di Bergamo", "la Dea"]
+  wikidata: Q300637
+
+- slug: bologna
+  type: brand
+  display_name: Bologna
+  aliases: ["Bologna FC", "i rossoblù"]
+  wikidata: Q4946
+
+- slug: torino
+  type: brand
+  display_name: Torino
+  aliases: ["Torino FC", "i granata", "il Toro"]
+  wikidata: Q5827
+
+# ============================================================
+# POLITICA — partiti italiani principali
+# ============================================================
+- slug: fratelli-d-italia
+  type: brand
+  display_name: Fratelli d'Italia
+  aliases: ["FdI", "Fratelli d Italia"]
+  wikidata: Q3742008
+
+- slug: pd
+  type: brand
+  display_name: Partito Democratico
+  aliases: ["PD", "il Partito Democratico", "i dem"]
+  wikidata: Q47729
+
+- slug: m5s
+  type: brand
+  display_name: Movimento 5 Stelle
+  aliases: ["M5S", "Cinque Stelle", "i grillini", "5 Stelle"]
+  wikidata: Q200639
+
+- slug: lega
+  type: brand
+  display_name: Lega
+  aliases: ["Lega Salvini Premier", "Lega Nord", "il Carroccio"]
+  wikidata: Q44480
+
+- slug: forza-italia
+  type: brand
+  display_name: Forza Italia
+  aliases: ["FI"]
+  wikidata: Q56654
+
+- slug: italia-viva
+  type: brand
+  display_name: Italia Viva
+  aliases: ["IV"]
+  wikidata: Q63250554
+
+- slug: azione
+  type: brand
+  display_name: Azione
+  aliases: ["Azione Calenda"]
+  wikidata: Q72935028
+
+- slug: alleanza-verdi-sinistra
+  type: brand
+  display_name: Alleanza Verdi Sinistra
+  aliases: ["AVS", "Verdi e Sinistra"]
+  wikidata: Q113810085
+
+# ============================================================
+# POLITICI — figure di rilievo (a) di governo, (b) opposizione, (c) UE
+# ============================================================
+- slug: giorgia-meloni
+  type: person
+  display_name: Giorgia Meloni
+  aliases: ["Meloni", "la premier Meloni", "Presidente del Consiglio"]
+  wikidata: Q1567930
+
+- slug: matteo-salvini
+  type: person
+  display_name: Matteo Salvini
+  aliases: ["Salvini", "il vicepremier Salvini"]
+  wikidata: Q317838
+
+- slug: antonio-tajani
+  type: person
+  display_name: Antonio Tajani
+  aliases: ["Tajani"]
+  wikidata: Q151580
+
+- slug: elly-schlein
+  type: person
+  display_name: Elly Schlein
+  aliases: ["Schlein", "la segretaria del Pd"]
+  wikidata: Q3737156
+
+- slug: giuseppe-conte
+  type: person
+  display_name: Giuseppe Conte
+  aliases: ["Conte", "Giuseppi"]
+  wikidata: Q34290
+
+- slug: matteo-renzi
+  type: person
+  display_name: Matteo Renzi
+  aliases: ["Renzi"]
+  wikidata: Q317836
+
+- slug: carlo-calenda
+  type: person
+  display_name: Carlo Calenda
+  aliases: ["Calenda"]
+  wikidata: Q511525
+
+- slug: sergio-mattarella
+  type: person
+  display_name: Sergio Mattarella
+  aliases: ["Mattarella", "il Capo dello Stato", "il Quirinale"]
+  wikidata: Q254003
+
+- slug: ursula-von-der-leyen
+  type: person
+  display_name: Ursula von der Leyen
+  aliases: ["von der Leyen", "Von der Leyen"]
+  wikidata: Q2071
+
+- slug: emmanuel-macron
+  type: person
+  display_name: Emmanuel Macron
+  aliases: ["Macron"]
+  wikidata: Q3052772
+
+- slug: olaf-scholz
+  type: person
+  display_name: Olaf Scholz
+  aliases: ["Scholz"]
+  wikidata: Q61053
+
+- slug: vladimir-putin
+  type: person
+  display_name: Vladimir Putin
+  aliases: ["Putin"]
+  wikidata: Q7747
+
+- slug: volodymyr-zelensky
+  type: person
+  display_name: Volodymyr Zelensky
+  aliases: ["Zelensky", "Zelenskyy", "Zelens'kyj"]
+  wikidata: Q291676
+
+- slug: donald-trump
+  type: person
+  display_name: Donald Trump
+  aliases: ["Trump"]
+  wikidata: Q22686
+
+- slug: joe-biden
+  type: person
+  display_name: Joe Biden
+  aliases: ["Biden"]
+  wikidata: Q6279
+
+# ============================================================
+# BRAND — big tech / IT
+# ============================================================
+- slug: apple
+  type: brand
+  display_name: Apple
+  aliases: ["Apple Inc"]
+  wikidata: Q312
+
+- slug: google
+  type: brand
+  display_name: Google
+  aliases: ["Alphabet", "Google LLC"]
+  wikidata: Q95
+
+- slug: microsoft
+  type: brand
+  display_name: Microsoft
+  aliases: ["Microsoft Corporation"]
+  wikidata: Q2283
+
+- slug: meta
+  type: brand
+  display_name: Meta
+  aliases: ["Meta Platforms", "Facebook Inc"]
+  wikidata: Q380
+
+- slug: amazon
+  type: brand
+  display_name: Amazon
+  aliases: ["Amazon.com"]
+  wikidata: Q3884
+
+- slug: openai
+  type: brand
+  display_name: OpenAI
+  aliases: ["Open AI"]
+  wikidata: Q21708200
+
+- slug: anthropic
+  type: brand
+  display_name: Anthropic
+  aliases: []
+  wikidata: Q116596655
+
+- slug: nvidia
+  type: brand
+  display_name: NVIDIA
+  aliases: ["Nvidia"]
+  wikidata: Q182477
+
+- slug: tesla
+  type: brand
+  display_name: Tesla
+  aliases: ["Tesla Inc", "Tesla Motors"]
+  wikidata: Q478214
+
+# ============================================================
+# BRAND — Italia (energia, telco, banche, retail, lusso)
+# ============================================================
+- slug: enel
+  type: brand
+  display_name: Enel
+  aliases: []
+  wikidata: Q1124668
+
+- slug: eni
+  type: brand
+  display_name: Eni
+  aliases: ["ENI SpA"]
+  wikidata: Q565594
+
+- slug: tim
+  type: brand
+  display_name: TIM
+  aliases: ["Telecom Italia", "Tim SpA"]
+  wikidata: Q132141
+
+- slug: intesa-sanpaolo
+  type: brand
+  display_name: Intesa Sanpaolo
+  aliases: ["Banca Intesa Sanpaolo"]
+  wikidata: Q647139
+
+- slug: unicredit
+  type: brand
+  display_name: UniCredit
+  aliases: ["Unicredit Group"]
+  wikidata: Q224852
+
+- slug: poste-italiane
+  type: brand
+  display_name: Poste Italiane
+  aliases: ["Poste"]
+  wikidata: Q495016
+
+- slug: ferrari
+  type: brand
+  display_name: Ferrari
+  aliases: ["la Rossa", "il cavallino"]
+  wikidata: Q27586
+
+- slug: stellantis
+  type: brand
+  display_name: Stellantis
+  aliases: []
+  wikidata: Q105163506
+
+- slug: gucci
+  type: brand
+  display_name: Gucci
+  aliases: []
+  wikidata: Q178885
+
+- slug: prada
+  type: brand
+  display_name: Prada
+  aliases: []
+  wikidata: Q193136
+
+- slug: barilla
+  type: brand
+  display_name: Barilla
+  aliases: ["Barilla Group"]
+  wikidata: Q639025
+
+# ============================================================
+# ARGOMENTI / TEMI ricorrenti
+# ============================================================
+- slug: intelligenza-artificiale
+  type: subject
+  display_name: Intelligenza artificiale
+  aliases: ["IA", "AI", "intelligenza artificiale generativa"]
+  wikidata: Q11660
+
+- slug: cambiamento-climatico
+  type: subject
+  display_name: Cambiamento climatico
+  aliases: ["crisi climatica", "riscaldamento globale"]
+  wikidata: Q7942
+
+- slug: guerra-ucraina
+  type: subject
+  display_name: Guerra in Ucraina
+  aliases: ["conflitto ucraino", "invasione russa dell'Ucraina"]
+  wikidata: Q110999040
+
+- slug: medio-oriente
+  type: subject
+  display_name: Medio Oriente
+  aliases: ["conflitto Israele Palestina", "Gaza"]
+
+- slug: pnrr
+  type: subject
+  display_name: PNRR
+  aliases: ["Piano Nazionale di Ripresa e Resilienza"]
+  wikidata: Q108593911
+
+# ============================================================
+# TODO — espandere a 200-500 entries:
+# - Calciatori top Serie A + nazionali
+# - Conduttori TV (Fazio, Vespa, De Filippi, ecc.)
+# - Cantanti italiani (Mengoni, Annalisa, Mahmood, ecc.)
+# - Brand moda IT (Armani, Versace, Bulgari, Tod's, Valentino, ...)
+# - Brand alimentari (Lavazza, Illy, Ferrero, Nutella, Plasmon, ...)
+# - Industria/business (Pirelli, Leonardo, Saipem, ENAV, ...)
+# - Media (Mediaset, Rai, Sky, Discovery, La7, ...)
+# - Tematiche ricorrenti (transizione energetica, manovra, NATO, BCE, ...)
+# - Personaggi politica internazionale (Sunak, Starmer, Trudeau, Modi, Xi Jinping, ...)

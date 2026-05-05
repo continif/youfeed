@@ -1,0 +1,129 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "youfeed-backend"
+version = "0.1.0"
+description = "YOUFEED backend (FastAPI + ingestion + Manticore content store)"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "Francesco Mastrogiovanni" }]
+dependencies = [
+    # web framework
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    # validation
+    "pydantic[email]>=2.6",
+    "pydantic-settings>=2.2",
+    # db
+    "sqlalchemy>=2.0",
+    "asyncpg>=0.29",            # driver async per l'app
+    "psycopg2-binary>=2.9",     # driver sync per Alembic
+    "alembic>=1.13",
+    # cache + queue
+    "redis>=5.0",
+    "hiredis>=2.3",
+    "rq>=1.16",
+    # auth & security
+    "argon2-cffi>=23.1",
+    "itsdangerous>=2.1",  # secure tokens (CSRF, mail tokens)
+    # http + ingestion
+    "httpx>=0.27",
+    "feedparser>=6.0",
+    "selectolax>=0.3.21",
+    "bleach>=6.1",
+    "w3lib>=2.1",
+    "extruct>=0.16",  # OG / Twitter Card / JSON-LD parsing
+    "trafilatura>=1.10",
+    # images
+    "pillow>=10.3",
+    # geoip
+    "maxminddb>=2.6",
+    # templates (incluso in fastapi ma esplicitiamo)
+    "jinja2>=3.1",
+    # logging
+    "structlog>=24.1",
+    # email
+    "aiosmtplib>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "pyright>=1.1.358",
+    "pytest>=8.1",
+    "pytest-asyncio>=0.23",
+    "pytest-anyio>=0.0.0",
+    "anyio>=4.3",
+    "httpx>=0.27",
+    "polyfactory>=2.15",
+    "freezegun>=1.4",
+]
+# Abilitate quando si arriva alla release relativa
+v1_1 = [
+    "authlib>=1.3",  # Google OAuth
+]
+v1_2 = [
+    "pywebpush>=2.0",  # web push VAPID
+    "anthropic>=0.25",  # LLM fallback classificazione
+    "spacy>=3.7",  # NER it_core_news_lg
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# ---------------------------------------------------------------------------
+# Ruff (lint + format)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",  # pycodestyle / pyflakes
+    "I",            # isort
+    "N",            # pep8-naming
+    "UP",           # pyupgrade
+    "B",            # flake8-bugbear
+    "ASYNC",        # flake8-async
+    "S",            # flake8-bandit (security)
+    "C4",           # flake8-comprehensions
+    "SIM",          # flake8-simplify
+    "RUF",
+]
+ignore = [
+    "S101",  # assert in test va bene
+    "B008",  # FastAPI Depends() come default è idiomatico
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "N"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ---------------------------------------------------------------------------
+# Pyright
+# ---------------------------------------------------------------------------
+[tool.pyright]
+include = ["app", "tests"]
+exclude = ["alembic/versions", ".venv"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = "warning"
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "integration: test che richiedono Postgres/Redis/Manticore reali",
+]

@@ -1,8 +1,9 @@
-"""Schemi Pydantic per alerts (Phase 1.2.D)."""
+"""Schemi Pydantic per alerts multi-topic (Phase 1.2.D + ext)."""
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,22 +19,29 @@ class AlertTopicOut(BaseModel):
     type: str
 
 
+MatchMode = Literal["all", "any"]
+
+
 class AlertOut(BaseModel):
-    """Alert dell'utente, joined con il Topic."""
+    """Alert dell'utente con N topic."""
 
     id: int
     is_enabled: bool
     channels: list[str]
+    match_mode: MatchMode
     created_at: datetime
     updated_at: datetime
-    topic: AlertTopicOut
+    topics: list[AlertTopicOut]
 
 
 class AlertCreateIn(BaseModel):
-    topic_id: int = Field(ge=1)
+    topic_ids: list[int] = Field(min_length=1, max_length=10)
     channels: list[str] | None = None
+    match_mode: MatchMode = "all"
 
 
 class AlertUpdateIn(BaseModel):
     is_enabled: bool | None = None
     channels: list[str] | None = None
+    topic_ids: list[int] | None = Field(default=None, min_length=1, max_length=10)
+    match_mode: MatchMode | None = None

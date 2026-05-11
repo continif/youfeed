@@ -1,7 +1,7 @@
 """Esporta tutti i modelli per Alembic autogenerate e per le query."""
 
 from .activity import ActivityLog
-from .alerts import Alert, AlertMatch
+from .alerts import Alert, AlertMatch, AlertTopic
 from .articles import Article
 from .base import Base, TimestampMixin
 from .notifications import Notification
@@ -48,5 +48,6 @@ __all__ = [
     "Notification",
     "Alert",
     "AlertMatch",
+    "AlertTopic",
     "PushSubscription",
 ]

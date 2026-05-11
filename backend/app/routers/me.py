@@ -216,26 +216,30 @@ async def notifications_mark_all_read(
 # ---------------------------------------------------------------------------
 
 
-def _alert_to_out(alert, topic) -> AlertOut:
+def _alert_to_out(alert) -> AlertOut:
     return AlertOut(
         id=int(alert.id),
         is_enabled=bool(alert.is_enabled),
         channels=list(alert.channels or []),
+        match_mode=alert.match_mode,  # type: ignore[arg-type]
         created_at=alert.created_at,
         updated_at=alert.updated_at,
-        topic=AlertTopicOut(
-            id=int(topic.id),
-            slug=topic.slug,
-            display_name=topic.display_name,
-            type=topic.type,
-        ),
+        topics=[
+            AlertTopicOut(
+                id=int(t.id),
+                slug=t.slug,
+                display_name=t.display_name,
+                type=t.type,
+            )
+            for t in (alert.topics or [])
+        ],
     )
 
 
 @router.get("/alerts", response_model=list[AlertOut])
 async def list_alerts_endpoint(user: CurrentUser, db: DB) -> list[AlertOut]:
     rows = await alert_service.list_alerts(db, user_id=int(user.id))
-    return [_alert_to_out(a, t) for a, t in rows]
+    return [_alert_to_out(a) for a in rows]
 
 
 @router.post("/alerts", response_model=AlertOut, status_code=status.HTTP_201_CREATED)
@@ -245,16 +249,19 @@ async def create_alert_endpoint(
     alert = await alert_service.create_alert(
         db,
         user_id=int(user.id),
-        topic_id=payload.topic_id,
+        topic_ids=payload.topic_ids,
         channels=payload.channels,
+        match_mode=payload.match_mode,
     )
     await db.commit()
-    # ricarica topic per output
-    from app.models import Topic
-
-    topic = await db.get(Topic, alert.topic_id)
-    log.info("yf.me.alert_created", user_id=user.id, alert_id=alert.id)
-    return _alert_to_out(alert, topic)
+    log.info(
+        "yf.me.alert_created",
+        user_id=user.id,
+        alert_id=alert.id,
+        n_topics=len(alert.topics or []),
+        match_mode=alert.match_mode,
+    )
+    return _alert_to_out(alert)
 
 
 @router.patch("/alerts/{alert_id}", response_model=AlertOut)
@@ -270,12 +277,11 @@ async def update_alert_endpoint(
         alert_id=alert_id,
         is_enabled=payload.is_enabled,
         channels=payload.channels,
+        topic_ids=payload.topic_ids,
+        match_mode=payload.match_mode,
     )
     await db.commit()
-    from app.models import Topic
-
-    topic = await db.get(Topic, alert.topic_id)
-    return _alert_to_out(alert, topic)
+    return _alert_to_out(alert)
 
 
 @router.delete("/alerts/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -138,13 +138,16 @@ export interface AlertTopicOut {
   type: string;
 }
 
+export type AlertMatchMode = "all" | "any";
+
 export interface AlertOut {
   id: number;
   is_enabled: boolean;
   channels: string[];
+  match_mode: AlertMatchMode;
   created_at: string;
   updated_at: string;
-  topic: AlertTopicOut;
+  topics: AlertTopicOut[];
 }
 
 export interface VapidKeyOut {

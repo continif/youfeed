@@ -2,7 +2,28 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:manual.manticoresearch.com)",
-      "Bash(python3 -m compileall -q app/ tests/)"
+      "Bash(python3 -m compileall -q app/ tests/)",
+      "Bash(npx vue-tsc *)",
+      "Bash(npm run *)",
+      "Bash(../.venv/bin/pytest tests/unit/test_topic_extractor.py tests/unit/test_classify.py tests/integration/test_classify_step_c.py -q)",
+      "Bash(../.venv/bin/ruff check *)",
+      "Bash(../.venv/bin/python -m app.utils.seed_loader --topics ../infra/seed/topics.yaml)",
+      "Bash(../.venv/bin/python -m app.utils.reclassify_topics --all)",
+      "Bash(../.venv/bin/python -m app.utils.topics_snapshot export --include-uncurated --out ../data/topics.parquet)",
+      "Bash(curl -sS -c /tmp/yf_cookies.txt -X POST http://www.youfeed.it/yf_auth/login -H 'Content-Type: application/json' -d '{\"identifier\":\"drtarr\",\"password\":\"..Y0uF33d..\"}' -o /dev/null -w 'login: HTTP %{http_code}\\\\n')",
+      "Bash(curl -sS -b /tmp/yf_cookies.txt http://www.youfeed.it/yf_me/categories)",
+      "Bash(curl -sS -b /tmp/yf_cookies.txt 'http://www.youfeed.it/yf_articles/feed?limit=3')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('total items:', len\\(d['items']\\)\\); print\\('first:', {'id':d['items'][0]['id'], 'title':d['items'][0]['title'][:60], 'category_color':d['items'][0]['category_color']}\\)\")",
+      "Bash(curl -sS -b /tmp/yf_cookies.txt -o /tmp/feed.txt -w \"HTTP %{http_code}  ct=%{content_type}\\\\n\" 'http://www.youfeed.it/yf_articles/feed?limit=3')",
+      "Read(//tmp/**)",
+      "Bash(curl -sS -b /tmp/yf_cookies.txt -o /tmp/feed.txt -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8000/yf_articles/feed?limit=3)",
+      "Bash(/home/francesco/code/youfeed/.venv/bin/python -m pytest tests/unit/test_topic_extractor.py tests/unit/test_classify.py)",
+      "Bash(/home/francesco/code/youfeed/.venv/bin/python -m app.utils.reclassify_topics --all)",
+      "Bash(/home/francesco/code/youfeed/.venv/bin/python /tmp/check_topics.py)",
+      "Bash(grep -v \"^$\")",
+      "Bash(/home/francesco/code/youfeed/.venv/bin/python -m pytest tests/)",
+      "Bash(/home/francesco/code/youfeed/.venv/bin/python -m pytest tests/unit/test_classify.py tests/unit/test_topic_extractor.py)",
+      "Bash(/home/francesco/code/youfeed/.venv/bin/python -c \"from app.main import app; print\\('OK', len\\(app.routes\\), 'routes'\\)\")"
     ]
   }
 }

@@ -1,0 +1,66 @@
+{# Layout di base per le pagine pubbliche server-rendered (Jinja2). #}
+<!DOCTYPE html>
+<html lang="it" data-theme="{{ initial_theme | default('auto') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}YouFeed — il tuo aggregatore di news{% endblock %}</title>
+    <meta name="description" content="{% block description %}YouFeed — aggregatore di news italiano{% endblock %}">
+    {% block canonical %}
+    {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
+    {% endblock %}
+    {% block og %}
+    <meta property="og:site_name" content="YouFeed">
+    <meta property="og:title" content="{{ self.title() }}">
+    <meta property="og:description" content="{{ self.description() }}">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="it_IT">
+    {% if canonical_url %}<meta property="og:url" content="{{ canonical_url }}">{% endif %}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.title() }}">
+    <meta name="twitter:description" content="{{ self.description() }}">
+    {% endblock %}
+    <link rel="alternate" type="application/rss+xml" title="RSS"
+          href="{% block rss_href %}{% endblock %}">
+    <link rel="stylesheet" href="/static/css/public.css">
+    {# Theme: legge prima localStorage poi prefers-color-scheme; evita flash. #}
+    <script>
+        (function() {
+            try {
+                var t = localStorage.getItem('yf-theme');
+                if (!t) {
+                    t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                        ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+    <header class="yf-header">
+        <a class="yf-brand" href="/">YouFeed</a>
+        <nav class="yf-nav">
+            {% block nav %}
+            <a href="/login">Accedi</a>
+            <a href="/register">Registrati</a>
+            {% endblock %}
+            <button class="yf-theme-toggle" type="button" aria-label="Cambia tema"
+                    onclick="(function(){var d=document.documentElement;var c=d.getAttribute('data-theme')==='dark'?'light':'dark';d.setAttribute('data-theme',c);try{localStorage.setItem('yf-theme',c);}catch(e){}})()">
+                <span class="theme-icon-light" aria-hidden="true">☀</span>
+                <span class="theme-icon-dark" aria-hidden="true">☾</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="yf-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="yf-footer">
+        <small>YouFeed — aggregatore news IT-only · <a href="/about">about</a></small>
+    </footer>
+
+    <script src="/static/js/public.js" defer></script>
+</body>
+</html>

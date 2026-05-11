@@ -1,0 +1,18 @@
+[Unit]
+Description=YOUFEED — daily activity_log partition maintenance
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed/backend
+EnvironmentFile=/opt/youfeed/.env
+ExecStart=/opt/youfeed/.venv/bin/python -m app.utils.manage_partitions \
+    --create-ahead 7 \
+    --retention-days 180
+
+# Logging via journald (default)
+StandardOutput=journal
+StandardError=journal

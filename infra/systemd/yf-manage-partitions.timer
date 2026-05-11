@@ -1,0 +1,11 @@
+[Unit]
+Description=YOUFEED — schedule daily partition maintenance at 02:30 UTC
+
+[Timer]
+# Daily 02:30 (UTC) — fascia bassa traffico
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+Unit=yf-manage-partitions.service
+
+[Install]
+WantedBy=timers.target

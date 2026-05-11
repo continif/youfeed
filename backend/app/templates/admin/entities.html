@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+{% block title %}Entità non risolte{% endblock %}
+{% block content %}
+<h1>Entità non risolte</h1>
+<p class="small">Entità NER/regex grezze ancora senza topic_id. Ordina per occorrenze decrescenti.
+Le promosse diventano nuovi topic curati (e attivano enrichment Wikidata automatico);
+quelle linkate ereditano un topic esistente; le ignorate spariscono dalla list.</p>
+
+<form class="ya-filters" method="get">
+    <label>ner_type
+        <select name="ner_type">
+            <option value="" {% if not filters.ner_type %}selected{% endif %}>—</option>
+            {% for typ, n in type_counts %}
+            <option value="{{ typ }}" {% if filters.ner_type == typ %}selected{% endif %}>
+                {{ typ }} ({{ n }})
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>min occorrenze
+        <input type="number" name="min_count" value="{{ filters.min_count }}" min="1" max="1000" style="width:5em">
+    </label>
+    <label>limit
+        <input type="number" name="limit" value="{{ filters.limit }}" min="1" max="1000" style="width:5em">
+    </label>
+    <button type="submit">Filtra</button>
+    {% if filters.ner_type or filters.min_count != 2 %}<a href="/yf_admin/entities">Reset</a>{% endif %}
+</form>
+
+<table class="ya-table">
+    <thead>
+        <tr>
+            <th>ID</th><th>Surface form</th><th>Normalized</th><th>NER</th>
+            <th>Count</th><th>First seen</th><th>Azioni</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in entities %}
+        <tr>
+            <td>{{ e.id }}</td>
+            <td><strong>{{ e.surface_form }}</strong></td>
+            <td class="small">{{ e.normalized }}</td>
+            <td><span class="ya-badge ya-badge-mute">{{ e.ner_type }}</span></td>
+            <td>{{ e.occurrence_count }}</td>
+            <td class="small">{{ e.first_seen_at.strftime('%Y-%m-%d') if e.first_seen_at else '—' }}</td>
+            <td class="small">
+                <form method="post" action="/yf_admin/entities/{{ e.id }}/promote" style="display:inline">
+                    <input type="hidden" name="return_to" value="/yf_admin/entities?min_count={{ filters.min_count }}&ner_type={{ filters.ner_type }}">
+                    <select name="type">
+                        {% for t in ['brand', 'person', 'subject', 'location', 'model'] %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Promuovi</button>
+                </form>
+                <form method="post" action="/yf_admin/entities/{{ e.id }}/link" style="display:inline">
+                    <input type="hidden" name="return_to" value="/yf_admin/entities?min_count={{ filters.min_count }}&ner_type={{ filters.ner_type }}">
+                    <input type="number" name="topic_id" placeholder="topic_id" required style="width:6em">
+                    <button type="submit">Collega</button>
+                </form>
+                <form method="post" action="/yf_admin/entities/{{ e.id }}/ignore" style="display:inline">
+                    <input type="hidden" name="return_to" value="/yf_admin/entities?min_count={{ filters.min_count }}&ner_type={{ filters.ner_type }}">
+                    <button type="submit" onclick="return confirm('Ignorare definitivamente?')">Ignora</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="small">Nessuna entità con i filtri correnti.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

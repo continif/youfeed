@@ -33,7 +33,7 @@ youfeed/
   backend/            # FastAPI + ingestion + worker
   frontend/           # Vue 3 SPA
   infra/              # systemd, Apache vhost, docker-compose, script
-  data/               # stopwords/wordforms IT, MMDB locali (dev)
+  data/               # stopwords/wordforms IT, MMDB locali (dev), snapshot topics (parquet)
   CLAUDE.md           # descrizione di prodotto
   STATUS.md → Claude/STATUS.md   # task list operativa
 ```
@@ -46,6 +46,20 @@ youfeed/
 - [`Claude/BACKEND.md`](Claude/BACKEND.md), [`INGESTION.md`](Claude/INGESTION.md), [`DATABASE.md`](Claude/DATABASE.md), [`KNOWLEDGE-GRAPH.md`](Claude/KNOWLEDGE-GRAPH.md), [`FRONTEND.md`](Claude/FRONTEND.md) — design tecnico per area
 - [`Claude/COMMANDS.md`](Claude/COMMANDS.md) — cheatsheet comandi quotidiani (dev, test, DB, Apache, deploy)
 - [`Claude/reserved-words.txt`](Claude/reserved-words.txt) — username vietati
+
+## Bootstrap dataset
+
+Tutti i `topics` curated (province, comuni ISTAT, brand, ...) sono backuppati
+in [`data/topics.parquet`](data/topics.parquet). Su un DB vergine basta un
+import:
+
+```bash
+cd backend
+python -m app.utils.topics_snapshot import --in ../data/topics.parquet
+```
+
+Per (ri)generare il file dai CSV grezzi e dettagli sui CLI vedi
+[`backend/README.md`](backend/README.md#dataset--snapshot).
 
 ## Deploy in produzione
 

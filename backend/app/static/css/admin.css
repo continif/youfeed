@@ -1,0 +1,133 @@
+/* YouFeed admin — minimal CSS, no theme switch (sempre light per chiarezza). */
+
+:root {
+    --ya-bg: #f7f7f9;
+    --ya-fg: #1a1a1a;
+    --ya-muted: #6b7280;
+    --ya-border: #d4d4d8;
+    --ya-card: #ffffff;
+    --ya-accent: #2563eb;
+    --ya-danger: #dc2626;
+    --ya-warn: #b45309;
+    --ya-ok: #059669;
+}
+
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0;
+    background: var(--ya-bg); color: var(--ya-fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; line-height: 1.5;
+}
+a { color: var(--ya-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.ya-header {
+    background: #1f2937; color: #fff;
+    padding: 10px 24px; display: flex; align-items: center; gap: 24px;
+    flex-wrap: wrap;
+}
+.ya-brand { color: #fff; font-weight: 700; font-size: 1.05rem; }
+.ya-nav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; flex: 1; }
+.ya-nav a { color: #cbd5e1; }
+.ya-nav a:hover { color: #fff; text-decoration: none; }
+.ya-quick { margin-left: auto; display: flex; gap: 4px; }
+.ya-quick input { padding: 4px 8px; border: 1px solid #4b5563; background: #111827; color: #fff; border-radius: 4px; width: 110px; }
+.ya-quick button { padding: 4px 10px; background: #2563eb; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+
+.ya-main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.ya-footer { text-align: center; color: var(--ya-muted); padding: 24px; font-size: .85rem; }
+
+h1 { font-size: 1.6rem; margin: 0 0 16px; }
+h2 { font-size: 1.2rem; margin: 24px 0 8px; }
+h3 { font-size: 1rem; margin: 16px 0 8px; }
+
+/* Cards / sections */
+.ya-card {
+    background: var(--ya-card);
+    border: 1px solid var(--ya-border);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.ya-counts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+.ya-count-card {
+    background: var(--ya-card); border: 1px solid var(--ya-border);
+    border-radius: 6px; padding: 16px; text-align: center;
+}
+.ya-count-card .n { font-size: 1.6rem; font-weight: 700; color: var(--ya-accent); }
+.ya-count-card .label { font-size: .85rem; color: var(--ya-muted); margin-top: 4px; }
+
+/* Tables */
+.ya-table { width: 100%; border-collapse: collapse; background: var(--ya-card); }
+.ya-table th, .ya-table td {
+    padding: 8px 12px; border-bottom: 1px solid var(--ya-border);
+    text-align: left; vertical-align: top;
+}
+.ya-table th { background: #f3f4f6; font-weight: 600; font-size: .85rem; }
+.ya-table tr:hover { background: #fafafa; }
+.ya-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ya-table .small { font-size: .8rem; color: var(--ya-muted); }
+
+/* Filtri / form */
+.ya-filters {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.ya-filters input, .ya-filters select {
+    padding: 6px 10px; border: 1px solid var(--ya-border); border-radius: 4px;
+    background: var(--ya-card);
+}
+.ya-filters button {
+    padding: 6px 14px; background: var(--ya-accent); color: #fff; border: 0;
+    border-radius: 4px; cursor: pointer;
+}
+
+.ya-form { background: var(--ya-card); border: 1px solid var(--ya-border); border-radius: 6px; padding: 16px; }
+.ya-form label { display: block; margin: 12px 0 4px; font-weight: 600; }
+.ya-form input[type=text], .ya-form input[type=number], .ya-form select, .ya-form textarea {
+    width: 100%; padding: 6px 10px; border: 1px solid var(--ya-border); border-radius: 4px;
+    font-family: inherit; font-size: inherit;
+}
+.ya-form textarea { min-height: 100px; font-family: ui-monospace, monospace; font-size: .85rem; }
+.ya-form .row-checkbox { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+.ya-form .row-checkbox label { margin: 0; }
+.ya-form .actions { margin-top: 16px; display: flex; gap: 8px; }
+.ya-btn {
+    padding: 6px 14px; background: var(--ya-accent); color: #fff; border: 0;
+    border-radius: 4px; cursor: pointer; font-size: inherit;
+}
+.ya-btn-danger { background: var(--ya-danger); }
+.ya-btn-secondary { background: #6b7280; }
+
+/* Badges */
+.ya-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: .72rem; font-weight: 500;
+}
+.ya-badge-ok { background: #d1fae5; color: var(--ya-ok); }
+.ya-badge-warn { background: #fef3c7; color: var(--ya-warn); }
+.ya-badge-danger { background: #fee2e2; color: var(--ya-danger); }
+.ya-badge-mute { background: #e5e7eb; color: var(--ya-muted); }
+.ya-badge-info { background: #dbeafe; color: var(--ya-accent); }
+
+/* Pager */
+.ya-pager {
+    margin-top: 16px; display: flex; gap: 8px; align-items: center;
+    color: var(--ya-muted); font-size: .85rem;
+}
+.ya-pager a {
+    padding: 4px 10px; border: 1px solid var(--ya-border);
+    border-radius: 4px; background: var(--ya-card); color: var(--ya-fg);
+}
+
+/* JSON / pre dump */
+pre.ya-dump {
+    background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 6px;
+    overflow: auto; font-size: .8rem; max-height: 500px;
+}
+code.ya-inline { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, monospace; }

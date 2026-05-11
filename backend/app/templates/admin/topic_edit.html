@@ -1,0 +1,71 @@
+{% extends "admin/base.html" %}
+{% block title %}Topic {{ topic.display_name }}{% endblock %}
+{% block content %}
+<p><a href="/yf_admin/topics">← Torna alla lista</a></p>
+<h1>Topic #{{ topic.id }} — {{ topic.display_name }}</h1>
+
+<form action="/yf_admin/topics/{{ topic.id }}" method="post" class="ya-form">
+    <label for="display_name">Display name</label>
+    <input id="display_name" type="text" name="display_name" value="{{ topic.display_name }}" required>
+
+    <label for="type">Type</label>
+    <select id="type" name="type" required>
+        {% for t in ['brand', 'person', 'subject', 'location', 'model'] %}
+        <option value="{{ t }}" {% if t == topic.type %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="aliases">Aliases (uno per riga)</label>
+    <textarea id="aliases" name="aliases">{% if topic.aliases %}{{ topic.aliases | join('\n') }}{% endif %}</textarea>
+
+    <label for="description">Descrizione (opzionale)</label>
+    <textarea id="description" name="description">{{ topic.description or '' }}</textarea>
+
+    <div class="row-checkbox">
+        <input id="is_curated" type="checkbox" name="is_curated" value="1" {% if topic.is_curated %}checked{% endif %}>
+        <label for="is_curated">Curated (matcha nel dict, è autoritativo)</label>
+    </div>
+
+    <div class="actions">
+        <button class="ya-btn" type="submit">Salva (e invalida cache classify)</button>
+        <a class="ya-btn ya-btn-secondary" href="/yf_admin/topics">Annulla</a>
+    </div>
+</form>
+
+<div class="ya-card" style="margin-top: 24px;">
+    <h2>Metadati</h2>
+    <p>
+        <strong>Slug:</strong> <code class="ya-inline">{{ topic.slug }}</code> ·
+        <strong>Articoli che lo usano:</strong> {{ article_count }} ·
+        <strong>Creato:</strong> {{ topic.created_at.strftime('%Y-%m-%d %H:%M') if topic.created_at else '—' }}
+    </p>
+    {% if topic.external_refs %}
+    <p><strong>External refs:</strong> <code class="ya-inline">{{ topic.external_refs }}</code></p>
+    {% endif %}
+</div>
+
+{% if sample_articles %}
+<div class="ya-card">
+    <h2>Top articoli che usano questo topic</h2>
+    <table class="ya-table">
+        <thead><tr><th>ID</th><th>Title</th><th class="num">Score</th><th></th></tr></thead>
+        <tbody>
+            {% for a, score in sample_articles %}
+            <tr>
+                <td>{{ a.id }}</td>
+                <td>{{ (a.raw_meta_lite or {}).get('title', '—') }}</td>
+                <td class="num">{{ "%.1f"|format(score) }}</td>
+                <td><a href="/yf_admin/articles/{{ a.id }}">Inspect</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<form action="/yf_admin/topics/{{ topic.id }}/delete" method="post"
+      onsubmit="return confirm('Elimini il topic {{ topic.display_name }}? Tutte le associazioni article_topics verranno rimosse (CASCADE).');"
+      style="margin-top: 24px;">
+    <button class="ya-btn ya-btn-danger" type="submit">Elimina topic</button>
+</form>
+{% endblock %}

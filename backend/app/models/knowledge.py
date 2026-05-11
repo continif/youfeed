@@ -55,8 +55,9 @@ class Entity(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     surface_form: Mapped[str] = mapped_column(Text, nullable=False)
     normalized: Mapped[str] = mapped_column(Text, nullable=False)
-    ner_type: Mapped[str] = mapped_column(String(16), nullable=False)
-    # 'PER' | 'ORG' | 'LOC' | 'MISC' | 'REGEX_PER' | 'REGEX_BRAND'
+    ner_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    # 'PER' | 'ORG' | 'LOC' | 'MISC' | 'REGEX_PER' | 'REGEX_POPE'
+    # | 'REGEX_BRAND_ALPHA' | 'REGEX_BRAND_SINGLE' | 'REGEX_MODEL'
     topic_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True
     )
@@ -122,3 +123,66 @@ class ArticleEntity(Base):
     entity: Mapped[Entity] = relationship()
 
     __table_args__ = (Index("ix_article_entities_entity", "entity_id"),)
+
+
+class EntitySourceCount(Base):
+    """Frequenza per-source di una entity. Aiuta a riconoscere candidate
+    polarizzati (alta concentrazione su poche source = probabile rumore o
+    nome locale, non un topic globale)."""
+
+    __tablename__ = "entity_source_counts"
+
+    entity_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("entities.id", ondelete="CASCADE"), primary_key=True
+    )
+    source_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("sources.id", ondelete="CASCADE"), primary_key=True
+    )
+    count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    __table_args__ = (Index("ix_entity_source_counts_entity", "entity_id"),)
+
+
+class TopicTermRule(Base):
+    """Regole admin-editabili per il classificatore (T-017).
+
+    `kind` ∈ {ambiguous_location, brand_single, case_sensitive_slug}:
+    - ambiguous_location: termine lowercase escluso dal dict-match per topic
+      di tipo `location` (comune IT che collide con sostantivo italiano comune).
+    - brand_single: termine Title Case escluso da REGEX_BRAND_SINGLE / trim
+      head/tail di REGEX_PER (avverbi, voci verbali).
+    - case_sensitive_slug: slug topic per cui il dict-match è case-sensitive
+      (display_name "Lancia" matcha solo Title Case, non "lancia" verbo).
+    """
+
+    __tablename__ = "topic_term_rules"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    term: Mapped[str] = mapped_column(Text, nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("kind", "term", name="uq_topic_term_rules_kind_term"),
+        Index("ix_topic_term_rules_kind", "kind"),
+    )
+
+
+class TopicCompositeRule(Base):
+    """Regola composite admin-editabile (T-017): se TUTTI gli slug in
+    `components` matchano in un articolo, vengono collassati in un singolo
+    topic con slug `composite_slug`. Esempio: google + gemini → google-gemini.
+    """
+
+    __tablename__ = "topic_composite_rules"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    composite_slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    components: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

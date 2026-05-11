@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+{% block title %}Composite rules{% endblock %}
+{% block content %}
+<h1>Composite rules ({{ rules | length }})</h1>
+
+<div class="ya-card">
+    <p>
+        Quando <strong>tutti</strong> gli slug in <code class="ya-inline">components</code>
+        matchano in un articolo, vengono rimossi e sostituiti da un singolo topic
+        con slug <code class="ya-inline">composite_slug</code>. Lo score del composite
+        è la somma degli score componenti.
+    </p>
+    <p class="small">
+        Esempio: se l'articolo matcha sia <code class="ya-inline">google</code> sia
+        <code class="ya-inline">gemini</code>, il risultato sarà solo
+        <code class="ya-inline">google-gemini</code> (che deve esistere come topic curated).
+    </p>
+</div>
+
+<div class="ya-card">
+    <h2>Aggiungi nuova composite rule</h2>
+    <form action="/yf_admin/composite" method="post" class="ya-form">
+        <label for="composite_slug">Composite slug (deve esistere come topic curated)</label>
+        <input id="composite_slug" type="text" name="composite_slug" placeholder="es. google-gemini" required>
+
+        <label for="components">Components (uno per riga, slug topic)</label>
+        <textarea id="components" name="components" placeholder="google&#10;gemini" required></textarea>
+
+        <label for="note">Note (opzionale)</label>
+        <input id="note" type="text" name="note">
+
+        <div class="actions">
+            <button class="ya-btn" type="submit">+ Aggiungi composite</button>
+        </div>
+    </form>
+</div>
+
+<div class="ya-card">
+    <h2>Composite attive</h2>
+    <table class="ya-table">
+        <thead><tr><th>Composite slug</th><th>Components</th><th>Note</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            {% for r in rules %}
+            <tr>
+                <td>
+                    {% if r.composite_slug in existing_slugs %}
+                    <a href="/yf_admin/topics/{{ existing_slugs[r.composite_slug] }}">
+                        <code class="ya-inline">{{ r.composite_slug }}</code>
+                    </a>
+                    {% else %}
+                    <code class="ya-inline">{{ r.composite_slug }}</code>
+                    {% endif %}
+                </td>
+                <td>
+                    {% for c in r.components %}
+                    {% if c in existing_slugs %}
+                    <a href="/yf_admin/topics/{{ existing_slugs[c] }}"><code class="ya-inline">{{ c }}</code></a>
+                    {% else %}
+                    <code class="ya-inline" style="color:#dc2626;">{{ c }}*</code>
+                    {% endif %}
+                    {% if not loop.last %} + {% endif %}
+                    {% endfor %}
+                </td>
+                <td class="small">{{ r.note or '—' }}</td>
+                <td>
+                    {% set comp_ok = r.composite_slug in existing_slugs %}
+                    {% set all_components_ok = r.components | reject('in', existing_slugs.keys()) | list | length == 0 %}
+                    {% if comp_ok and all_components_ok %}
+                    <span class="ya-badge ya-badge-ok">attiva</span>
+                    {% elif not comp_ok %}
+                    <span class="ya-badge ya-badge-danger">composite missing</span>
+                    {% else %}
+                    <span class="ya-badge ya-badge-warn">component missing</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="/yf_admin/composite/{{ r.id }}/delete" method="post"
+                          onsubmit="return confirm('Eliminare la composite \'{{ r.composite_slug }}\'?')">
+                        <button class="ya-btn ya-btn-danger" type="submit">Elimina</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="small">Nessuna composite rule.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="small" style="margin-top: 8px;">
+        <code class="ya-inline" style="color:#dc2626;">slug*</code> = slug non presente in <code class="ya-inline">topics</code> (regola inerte).
+    </p>
+</div>
+{% endblock %}

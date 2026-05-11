@@ -1,0 +1,138 @@
+{% extends "admin/base.html" %}
+{% block title %}Topic{% endblock %}
+{% block content %}
+<h1>Topic ({{ total }})</h1>
+
+<details class="ya-card" style="margin-bottom: 12px;">
+    <summary style="cursor: pointer; font-weight: 600;">+ Aggiungi nuovo topic</summary>
+    <form action="/yf_admin/topics/create" method="post" class="ya-filters" style="margin-top: 10px;">
+        <input type="text" name="display_name" placeholder="Display name (es. Samsung One UI 8.5)"
+               required style="flex: 2;">
+        <select name="type" required>
+            <option value="brand">brand</option>
+            <option value="person">person</option>
+            <option value="subject">subject</option>
+            <option value="location">location</option>
+            <option value="model">model</option>
+        </select>
+        <input type="text" name="aliases" placeholder="Aliases (comma-separated, opzionali)"
+               style="flex: 2;">
+        <button type="submit" class="ya-btn">Crea curated</button>
+    </form>
+    <p class="small">Slug derivato automaticamente. Se esiste già viene promosso a <code>is_curated=true</code>.</p>
+</details>
+
+<form class="ya-filters" method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Cerca per nome o slug">
+    <select name="type">
+        <option value="" {% if not type_ %}selected{% endif %}>Tutti (escl. invalid)</option>
+        <option value="brand" {% if type_ == 'brand' %}selected{% endif %}>brand</option>
+        <option value="person" {% if type_ == 'person' %}selected{% endif %}>person</option>
+        <option value="subject" {% if type_ == 'subject' %}selected{% endif %}>subject</option>
+        <option value="location" {% if type_ == 'location' %}selected{% endif %}>location</option>
+        <option value="model" {% if type_ == 'model' %}selected{% endif %}>model</option>
+        <option value="invalid" {% if type_ == 'invalid' %}selected{% endif %}>invalid (blacklisted)</option>
+    </select>
+    <select name="is_curated">
+        <option value="" {% if not is_curated %}selected{% endif %}>Curated + auto</option>
+        <option value="1" {% if is_curated == '1' %}selected{% endif %}>Solo curated</option>
+        <option value="0" {% if is_curated == '0' %}selected{% endif %}>Solo auto-extracted</option>
+    </select>
+    <input type="hidden" name="limit" value="{{ limit }}">
+    <button type="submit">Filtra</button>
+    {% if q or type_ or is_curated %}<a href="/yf_admin/topics">Reset</a>{% endif %}
+</form>
+
+<form action="/yf_admin/topics/bulk" method="post" id="bulk-form">
+    <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+
+    <div class="ya-filters" style="background: #fef3c7; padding: 10px 12px; border-radius: 4px;">
+        <strong>Selezionati: <span id="selected-count">0</span></strong>
+        <button type="submit" name="action" value="validate" class="ya-btn"
+                onclick="return confirm('Promuovi i topic selezionati a curated (validi)?')">
+            ✓ Marca come validi
+        </button>
+        <button type="submit" name="action" value="invalidate" class="ya-btn ya-btn-danger"
+                onclick="return confirm('Marca come INVALID? Le associazioni article_topics vengono cancellate; il topic resta in tabella e future ingestion lo ignorano.')">
+            ✗ Marca come invalid (blacklist)
+        </button>
+        <span class="small" style="margin-left: auto;">
+            Tip: filtra per "auto-extracted" e seleziona i da rivedere.
+        </span>
+    </div>
+
+    <table class="ya-table" style="margin-top: 12px;">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all" title="Seleziona tutti i visibili"></th>
+                <th>ID</th><th>Display</th><th>Slug</th><th>Type</th>
+                <th>Curated</th><th class="num">Articoli</th><th>Aliases</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in topics %}
+            <tr>
+                <td><input type="checkbox" name="ids" value="{{ t.id }}" class="row-check"></td>
+                <td>{{ t.id }}</td>
+                <td><strong>{{ t.display_name }}</strong></td>
+                <td><code class="ya-inline">{{ t.slug }}</code></td>
+                <td>
+                    {% if t.type == 'invalid' %}
+                    <span class="ya-badge ya-badge-danger">invalid</span>
+                    {% else %}
+                    <span class="ya-badge ya-badge-info">{{ t.type }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.is_curated %}
+                    <span class="ya-badge ya-badge-ok">curated</span>
+                    {% else %}
+                    <span class="ya-badge ya-badge-mute">auto</span>
+                    {% endif %}
+                </td>
+                <td class="num">{{ article_counts.get(t.id, 0) }}</td>
+                <td class="small">
+                    {% if t.aliases %}
+                    {{ t.aliases | length }} alias
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td><a href="/yf_admin/topics/{{ t.id }}">Edit</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="small">Nessun topic.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+
+<script>
+(function () {
+    const rowChecks = document.querySelectorAll('.row-check');
+    const selectAll = document.getElementById('select-all');
+    const counter = document.getElementById('selected-count');
+    function refresh() {
+        const n = Array.from(rowChecks).filter(c => c.checked).length;
+        counter.textContent = n;
+        selectAll.indeterminate = n > 0 && n < rowChecks.length;
+        selectAll.checked = n > 0 && n === rowChecks.length;
+    }
+    selectAll.addEventListener('change', () => {
+        rowChecks.forEach(c => { c.checked = selectAll.checked; });
+        refresh();
+    });
+    rowChecks.forEach(c => c.addEventListener('change', refresh));
+})();
+</script>
+
+<div class="ya-pager">
+    {% if offset > 0 %}
+    <a href="?q={{ q }}&type={{ type_ }}&is_curated={{ is_curated }}&limit={{ limit }}&offset={{ [0, offset - limit] | max }}">← Prev</a>
+    {% endif %}
+    <span>{{ offset + 1 }}–{{ [offset + limit, total] | min }} di {{ total }}</span>
+    {% if offset + limit < total %}
+    <a href="?q={{ q }}&type={{ type_ }}&is_curated={{ is_curated }}&limit={{ limit }}&offset={{ offset + limit }}">Next →</a>
+    {% endif %}
+</div>
+{% endblock %}

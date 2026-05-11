@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+{% block title %}Statistiche{% endblock %}
+{% block content %}
+<h1>Statistiche topic</h1>
+
+<div class="ya-card">
+    <h2>Topic per tipo</h2>
+    <table class="ya-table" style="max-width: 400px;">
+        <thead><tr><th>Type</th><th class="num">Count</th></tr></thead>
+        <tbody>
+            {% for type_name, count in by_type %}
+            <tr><td><span class="ya-badge ya-badge-info">{{ type_name }}</span></td><td class="num">{{ count }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="small" style="margin-top: 12px;">
+        Topic senza articoli associati: <strong>{{ orphans }}</strong>
+        (candidati a essere ripuliti se non sono curated whitelisted).
+    </p>
+</div>
+
+<div class="ya-card">
+    <h2>Estrazioni per source</h2>
+    <table class="ya-table" style="max-width: 400px;">
+        <thead><tr><th>Source</th><th class="num">Associazioni</th></tr></thead>
+        <tbody>
+            {% for source_name, count in by_source %}
+            <tr>
+                <td>
+                    {% if source_name == 'dict' %}<span class="ya-badge ya-badge-ok">{{ source_name }}</span>
+                    {% elif source_name == 'regex' %}<span class="ya-badge ya-badge-warn">{{ source_name }}</span>
+                    {% elif source_name == 'composite' %}<span class="ya-badge ya-badge-info">{{ source_name }}</span>
+                    {% else %}<span class="ya-badge ya-badge-mute">{{ source_name }}</span>{% endif %}
+                </td>
+                <td class="num">{{ count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>Top 50 topic per articoli</h2>
+    <table class="ya-table">
+        <thead><tr><th>Rank</th><th>Display</th><th>Slug</th><th>Type</th><th>Curated</th><th class="num">Articoli</th><th></th></tr></thead>
+        <tbody>
+            {% for t, n in top50 %}
+            <tr>
+                <td class="num">{{ loop.index }}</td>
+                <td><strong>{{ t.display_name }}</strong></td>
+                <td><code class="ya-inline">{{ t.slug }}</code></td>
+                <td><span class="ya-badge ya-badge-info">{{ t.type }}</span></td>
+                <td>
+                    {% if t.is_curated %}<span class="ya-badge ya-badge-ok">curated</span>
+                    {% else %}<span class="ya-badge ya-badge-mute">auto</span>{% endif %}
+                </td>
+                <td class="num">{{ n }}</td>
+                <td><a href="/yf_admin/topics/{{ t.id }}">Edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

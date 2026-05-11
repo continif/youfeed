@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+{% block title %}Featured sources{% endblock %}
+{% block content %}
+<h1>Featured sources ({{ items|length }})</h1>
+<p class="small">Fonti popolari pre-curate mostrate in homepage / dispatcher pubblico Jinja2.
+Ordinate per `position ASC` poi `source_id`.</p>
+
+<details>
+    <summary>Aggiungi/aggiorna fonte featured</summary>
+    <form class="ya-form" method="post" action="/yf_admin/featured">
+        <label>source_id (intero, vedi /yf_admin/sources)
+            <input type="number" name="source_id" required style="width:8em">
+        </label>
+        <label>category_hint (opz)
+            <input type="text" name="category_hint" placeholder="tech, news, sport…" style="width:14em">
+        </label>
+        <label>display_name (opz)
+            <input type="text" name="display_name" style="width:20em">
+        </label>
+        <label>description (opz)
+            <input type="text" name="description" style="width:30em">
+        </label>
+        <label>position
+            <input type="number" name="position" value="0" style="width:5em">
+        </label>
+        <button type="submit">Salva</button>
+    </form>
+</details>
+
+<table class="ya-table">
+    <thead>
+        <tr>
+            <th>Pos</th><th>Source ID</th><th>Title</th><th>URL</th>
+            <th>Category hint</th><th>Display name</th><th>Until</th><th>Azioni</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for it in items %}
+        <tr>
+            <td>{{ it.featured.position }}</td>
+            <td>{{ it.source.id }}</td>
+            <td><strong>{{ it.source.title or '—' }}</strong></td>
+            <td class="small">{{ it.source.url_site or it.source.url_feed or '—' }}</td>
+            <td>{{ it.featured.category_hint or '—' }}</td>
+            <td>{{ it.featured.display_name or '—' }}</td>
+            <td class="small">
+                {% if it.featured.featured_until %}
+                {{ it.featured.featured_until.strftime('%Y-%m-%d') }}
+                {% else %}
+                <span class="ya-badge ya-badge-ok">sempre</span>
+                {% endif %}
+            </td>
+            <td>
+                <form method="post" action="/yf_admin/featured/{{ it.source.id }}/delete" style="display:inline">
+                    <button type="submit" onclick="return confirm('Rimuovere da featured?')">Rimuovi</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="small">Nessuna fonte featured.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -73,11 +73,12 @@ def _error_response(
     message: str,
     status_code: int,
     details: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     body: dict[str, Any] = {"error": {"code": code, "message": message}}
     if details:
         body["error"]["details"] = details
-    return JSONResponse(status_code=status_code, content=body)
+    return JSONResponse(status_code=status_code, content=body, headers=headers)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -89,10 +90,13 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(StarletteHTTPException)
     async def _http_handler(_req: Request, exc: StarletteHTTPException) -> JSONResponse:
+        # Preserva eventuali header come WWW-Authenticate (HTTP Basic prompt
+        # del browser) sollevati da `HTTPException(headers={...})`.
         return _error_response(
             code=f"http_{exc.status_code}",
             message=str(exc.detail) if exc.detail else "HTTP error",
             status_code=exc.status_code,
+            headers=getattr(exc, "headers", None),
         )
 
     @app.exception_handler(RequestValidationError)

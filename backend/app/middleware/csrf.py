@@ -58,11 +58,14 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         method = request.method.upper()
         path = request.url.path
 
-        # Validazione su metodi non-safe, escludendo bootstrap auth e Bearer
+        # Validazione su metodi non-safe, escludendo bootstrap auth, Bearer
+        # e admin (HTTP Basic auth, no session cookie → CSRF inapplicabile).
         needs_check = (
             method not in SAFE_METHODS
             and path not in CSRF_BOOTSTRAP_PATHS
+            and not path.startswith("/yf_admin")
             and not request.headers.get("authorization", "").lower().startswith("bearer ")
+            and not request.headers.get("authorization", "").lower().startswith("basic ")
         )
 
         if needs_check:

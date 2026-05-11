@@ -1,0 +1,104 @@
+{% extends "public/base.html" %}
+
+{% block title %}YouFeed — il tuo aggregatore di news italiano{% endblock %}
+{% block description %}Crea il tuo feed personalizzato di notizie italiane: scegli i siti, organizza per categorie, esporta come RSS. Gratuito e senza profilazione.{% endblock %}
+
+{% block og %}
+{{ super() }}
+{% if items and items[0].image_local_url %}
+<meta property="og:image" content="{{ items[0].image_local_url }}">
+<meta name="twitter:image" content="{{ items[0].image_local_url }}">
+{% elif items and items[0].image_url %}
+<meta property="og:image" content="{{ items[0].image_url }}">
+<meta name="twitter:image" content="{{ items[0].image_url }}">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="yf-hero">
+    <h1>Le tue notizie italiane, organizzate come vuoi tu.</h1>
+    <p class="yf-lead">
+        Aggrega i feed RSS dei siti che leggi, organizzali per categorie,
+        rendi pubblico il tuo feed e condividilo come RSS. Niente algoritmi
+        opachi, niente profilazione.
+    </p>
+    <p class="yf-cta">
+        <a class="yf-btn yf-btn-primary" href="/register">Crea il tuo feed gratis</a>
+        <a class="yf-btn" href="/login">Accedi</a>
+    </p>
+</section>
+
+{% if items %}
+<section class="yf-vetrina">
+    <header class="yf-section-header">
+        <h2>In primo piano</h2>
+        <p class="yf-section-sub">Ultimi articoli dai feed pubblici degli utenti YouFeed.</p>
+    </header>
+    <div class="yf-masonry" role="feed" aria-label="Articoli in primo piano">
+        {% for item in items %}
+        <article class="yf-card" data-article-id="{{ item.id }}">
+            {% set img = item.image_local_url or item.image_url %}
+            {% if img %}
+            <a class="yf-card-image-link" href="{{ item.url_canonical }}" rel="noopener" target="_blank">
+                <img class="yf-card-image"
+                     src="{{ img }}"
+                     alt="{{ item.title | e }}"
+                     loading="lazy"
+                     {% if item.image_width and item.image_height %}
+                     width="{{ item.image_width }}" height="{{ item.image_height }}"
+                     {% endif %}>
+                {% if item.published_at_iso %}
+                <time class="yf-card-image-time" datetime="{{ item.published_at_iso }}">{{ item.published_at_human }}</time>
+                {% endif %}
+            </a>
+            {% endif %}
+            <div class="yf-card-body">
+                <h3 class="yf-card-title">
+                    <a href="{{ item.url_canonical }}" rel="noopener" target="_blank">{{ item.title }}</a>
+                </h3>
+                {% if item.description %}
+                <p class="yf-card-desc">{{ item.description | striptags | truncate(180) }}</p>
+                {% endif %}
+                <footer class="yf-card-meta">
+                    <span class="yf-card-source">{{ item.source.title or item.source.url_site }}</span>
+                    {% if not img and item.published_at_iso %}
+                    <time datetime="{{ item.published_at_iso }}">{{ item.published_at_human }}</time>
+                    {% endif %}
+                </footer>
+                {% if item.topics %}
+                <ul class="yf-card-topics">
+                    {% for t in item.topics %}
+                    <li class="yf-topic yf-topic-{{ t.type }}">{{ t.display_name }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="yf-features">
+    <article>
+        <h2>1. Aggiungi le tue fonti</h2>
+        <p>Incolla l'URL di un sito o di un feed RSS — pensiamo noi a estrarre titoli e immagini, anche da siti WordPress.</p>
+    </article>
+    <article>
+        <h2>2. Organizza per categorie</h2>
+        <p>Crea l'alberatura che vuoi: tematiche, brand, personaggi. Colori personalizzati e drag-and-drop per il riordino.</p>
+    </article>
+    <article>
+        <h2>3. Condividi come vuoi</h2>
+        <p>Rendi pubbliche le categorie che ti interessano: il tuo feed è raggiungibile su <code>youfeed.it/{username}</code> ed esportabile come RSS.</p>
+    </article>
+</section>
+
+<section class="yf-cta-bottom">
+    <h2>Pronto a costruire il tuo feed?</h2>
+    <p class="yf-lead">Bastano due minuti: aggiungi una fonte e l'aggregatore inizia a popolarsi.</p>
+    <p class="yf-cta">
+        <a class="yf-btn yf-btn-primary" href="/register">Crea il tuo feed gratis</a>
+    </p>
+</section>
+{% endblock %}

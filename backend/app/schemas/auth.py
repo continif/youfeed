@@ -28,6 +28,22 @@ class ResendVerificationIn(BaseModel):
     email: EmailStr
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=10, max_length=200)
+
+
+class MePatchIn(BaseModel):
+    """Patch parziale per `/yf_me`. Setta `onboarding_completed_at = NOW()`
+    se True, NULL se False (utile per test/admin)."""
+
+    onboarding_completed: bool | None = None
+
+
 class UserOut(BaseModel):
     """Rappresentazione pubblica dell'utente loggato."""
 
@@ -45,6 +61,19 @@ class MessageOut(BaseModel):
     """Risposta generica con messaggio human-readable."""
 
     message: str
+
+
+class DeviceOut(BaseModel):
+    """Sessione attiva dell'utente loggato (Phase 1.1.C)."""
+
+    id: str
+    client: str
+    ip: str | None
+    country: str | None
+    ua: str | None
+    created_at: datetime
+    last_seen_at: datetime
+    current: bool
 
 
 class UsernameAvailableOut(BaseModel):

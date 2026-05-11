@@ -21,14 +21,16 @@ from app.deps import DB
 from app.exceptions import UnauthorizedError
 from app.models import User
 from app.schemas.auth import (
+    ForgotPasswordIn,
     LoginIn,
     MessageOut,
     RegisterIn,
     ResendVerificationIn,
+    ResetPasswordIn,
     UsernameAvailableOut,
 )
 from app.services import auth_service
-from app.workers.email import enqueue_verification
+from app.workers.email import enqueue_password_reset, enqueue_verification
 
 log = structlog.get_logger()
 
@@ -161,6 +163,44 @@ async def login(
     _set_session_cookie(response, str(auth_session.id))
     log.info("yf.auth.login", user_id=user.id, session_id=str(auth_session.id))
     return MessageOut(message="Accesso effettuato.")
+
+
+# ---------------------------------------------------------------------------
+# Forgot / reset password (Phase 1.1.B)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/forgot-password", response_model=MessageOut)
+async def forgot_password(payload: ForgotPasswordIn, db: DB) -> MessageOut:
+    """Avvia il flow di reset password.
+
+    Risposta volutamente identica per email esistenti e non — antiscan.
+    """
+    result = await auth_service.issue_password_reset_token(db, str(payload.email))
+    await db.commit()
+    if result is not None:
+        user, token = result
+        enqueue_password_reset(to=user.email, username=user.username, token=token)
+        log.info("yf.auth.reset_requested", user_id=user.id)
+    return MessageOut(
+        message="Se l'email esiste, ti abbiamo inviato un link per reimpostare la password."
+    )
+
+
+@router.post("/reset-password", response_model=MessageOut)
+async def reset_password(payload: ResetPasswordIn, db: DB) -> MessageOut:
+    try:
+        user = await auth_service.consume_password_reset_token(
+            db, token=payload.token, new_password=payload.new_password
+        )
+    except auth_service.ValidationError as e:
+        from app.exceptions import AppError
+
+        raise AppError(e.message, code=e.code, status_code=422) from e
+
+    await db.commit()
+    log.info("yf.auth.password_reset", user_id=user.id)
+    return MessageOut(message="Password aggiornata. Ora puoi accedere con la nuova password.")
 
 
 @router.post("/logout", response_model=MessageOut)

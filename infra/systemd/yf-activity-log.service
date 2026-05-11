@@ -1,0 +1,23 @@
+[Unit]
+Description=YOUFEED — activity_log Redis drainer (long-running)
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed/backend
+EnvironmentFile=/opt/youfeed/.env
+ExecStart=/opt/youfeed/.venv/bin/python -m app.workers.activity_log \
+    --batch 200 \
+    --max-wait 5
+
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

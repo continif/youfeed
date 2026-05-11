@@ -5,8 +5,11 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 import structlog
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.config import get_settings
@@ -18,7 +21,23 @@ from app.middleware.csrf import CSRFMiddleware
 from app.middleware.geoip import GeoIPMiddleware
 from app.middleware.ratelimit import RateLimitMiddleware
 from app.redis_client import dispose_redis
-from app.routers import auth, categories, discovery, health, me, sources
+from app.routers import (
+    admin,
+    articles,
+    auth,
+    categories,
+    dispatcher,
+    discovery,
+    health,
+    me,
+    oauth,
+    public,
+    push,
+    search,
+    seo,
+    sources,
+    track,
+)
 
 
 @asynccontextmanager
@@ -62,14 +81,29 @@ def create_app() -> FastAPI:
     # Routers
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(oauth.router)  # /yf_auth/google/* (Phase 1.1.A)
     app.include_router(me.router)
     app.include_router(categories.router)
     app.include_router(sources.me_router)
     app.include_router(sources.public_router)
     app.include_router(discovery.router)
+    app.include_router(articles.router)
+    app.include_router(search.router)  # /yf_search + /yf_search/suggest
+    app.include_router(push.public_router)  # /yf_push/vapid-key
+    app.include_router(push.me_router)      # /yf_me/push/* (Phase 1.2.E)
+    app.include_router(track.router)
+    app.include_router(public.router)
+    app.include_router(seo.router)  # /sitemap.xml + /robots.txt
+    app.include_router(admin.router)  # /yf_admin/* (HTTP Basic via .env)
 
-    # NB: articles, public dispatcher, ecc. verranno registrati
-    # nelle Phase successive (vedi Claude/STATUS.md).
+    # Static files per le pagine pubbliche (CSS/JS Jinja2). In prod
+    # Apache li serve direct; in dev li monta uvicorn.
+    static_dir = Path(__file__).resolve().parent / "static"
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    # Catch-all dispatcher Jinja2 — DEVE essere l'ULTIMO router perché
+    # `/` e `/{username}` matchano qualsiasi cosa non già instradata.
+    app.include_router(dispatcher.router)
 
     return app
 

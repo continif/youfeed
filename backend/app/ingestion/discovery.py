@@ -53,6 +53,29 @@ COMMON_FEED_PATHS = (
     "/feed.json",
 )
 
+# Titoli ritornati da pagine di anti-bot/challenge (Cloudflare ecc.) invece del
+# sito reale. Match case-insensitive su sottostringa: se compare uno di questi
+# in `<title>`, scartiamo il titolo HTML e proviamo a ripiegare sul titolo del
+# feed RSS o sul nome del sito esposto da `wp-json/`.
+BAD_TITLE_MARKERS = (
+    "just a moment",
+    "attention required",
+    "access denied",
+    "cloudflare",
+    "checking your browser",
+    "ddos protection by",
+    "please enable cookies",
+    "verify you are human",
+    "one moment, please",
+)
+
+
+def _looks_like_bot_challenge(title: str | None) -> bool:
+    if not title:
+        return False
+    low = title.strip().lower()
+    return any(m in low for m in BAD_TITLE_MARKERS)
+
 
 # ---------------------------------------------------------------------------
 # Data classes (output)
@@ -227,6 +250,29 @@ async def _verify_wp_api(client: httpx.AsyncClient, wp_api_root: str) -> bool:
     return isinstance(data, list)
 
 
+async def _wp_site_name(
+    client: httpx.AsyncClient, wp_api_root: str
+) -> str | None:
+    """Fetch `/wp-json/` root → ritorna `name` (titolo del sito WordPress)."""
+    # wp_api_root è tipo `https://site/wp-json/wp/v2` → root è `https://site/wp-json`
+    root = wp_api_root
+    for suffix in ("/wp/v2", "/wp/v2/"):
+        if root.endswith(suffix):
+            root = root[: -len(suffix)]
+            break
+    resp = await _fetch(client, root)
+    if resp is None or resp.status_code != 200:
+        return None
+    try:
+        data = resp.json()
+    except Exception:
+        return None
+    name = data.get("name") if isinstance(data, dict) else None
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Step 3 — feed RSS in HTML
 # ---------------------------------------------------------------------------
@@ -295,6 +341,8 @@ def _extract_og(html: HTMLParser, base_url: str) -> OgPreview:
         return None
 
     og.title = _meta("og:title") or _title_tag(html)
+    if _looks_like_bot_challenge(og.title):
+        og.title = None
     og.description = _meta("og:description") or _meta("description")
     og.site_name = _meta("og:site_name")
     og_image = _meta("og:image") or _meta("twitter:image")
@@ -368,6 +416,7 @@ async def _discover_inner(
                         url_feed=final_url, title=title, sample_articles=sample
                     )
                 ],
+                og=OgPreview(title=title),
             )
 
     # Da qui assumiamo HTML → parsing
@@ -383,6 +432,7 @@ async def _discover_inner(
                         url_feed=final_url, title=title, sample_articles=sample
                     )
                 ],
+                og=OgPreview(title=title),
             )
         return DiscoveryResult(
             kind="invalid",
@@ -406,6 +456,10 @@ async def _discover_inner(
 
     if wp_root and await _verify_wp_api(client, wp_root):
         log.info("yf.discovery.wp_api", root=wp_root)
+        # Se l'HTML era un challenge anti-bot, il titolo dal `wp-json/` root
+        # (campo `name`) è quasi sempre il nome reale del sito WordPress.
+        if not og.title:
+            og.title = await _wp_site_name(client, wp_root)
         return DiscoveryResult(
             kind="wordpress_api",
             url_site=final_url,
@@ -445,6 +499,13 @@ async def _discover_inner(
                 )
 
     if candidates:
+        # Se l'HTML era un challenge anti-bot e og.title è caduto, ripiega sul
+        # titolo del primo feed valido (il `<channel><title>` dell'XML).
+        if not og.title:
+            for c in candidates:
+                if c.title:
+                    og.title = c.title
+                    break
         return DiscoveryResult(
             kind="rss",
             url_site=final_url,

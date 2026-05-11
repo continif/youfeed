@@ -104,6 +104,24 @@ class EmailVerificationToken(Base):
     __table_args__ = (Index("ix_email_verification_tokens_user_id", "user_id"),)
 
 
+class PasswordResetToken(Base):
+    """Token reset password (mono-uso, TTL 1h)."""
+
+    __tablename__ = "password_reset_tokens"
+
+    token: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (Index("ix_password_reset_tokens_user_id", "user_id"),)
+
+
 class ReservedUsername(Base):
     """Username riservati (lista da `Claude/reserved-words.txt` + prefisso `yf_`)."""
 

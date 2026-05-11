@@ -200,11 +200,231 @@ async def load_featured_sources(session: AsyncSession, file_path: Path) -> int:
     return count
 
 
+def _fix_mojibake(s: str) -> str:
+    """Risolve UTF-8 letto come Windows-1252 (es. 'ForlÃ¬' → 'Forlì').
+    Idempotente: se la stringa è già UTF-8 pulito, ritorna invariata."""
+    if not s:
+        return s
+    try:
+        return s.encode("cp1252").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return s
+
+
+async def load_provinces_csv(session: AsyncSession, file_path: Path) -> int:
+    """Carica le province italiane come `topics` con type='location' curated.
+
+    Il CSV (vedi `infra/seed/raw/province-italiane.csv`) può contenere
+    mojibake da copia-incolla; lo correggiamo in fase di parsing. Solo la
+    colonna `Provincia` è usata per il `display_name`; il `slug` è derivato
+    via `slugify`.
+    """
+    if not file_path.exists():
+        print(f"  [skip] {file_path} non esiste", file=sys.stderr)
+        return 0
+
+    import csv
+
+    from app.utils.slugify import slugify
+
+    rows: list[dict[str, Any]] = []
+    seen_slugs: set[str] = set()
+    with file_path.open(encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for raw_row in reader:
+            name_raw = (raw_row.get("Provincia") or "").strip()
+            if not name_raw:
+                continue
+            display_name = _fix_mojibake(name_raw)
+            slug = slugify(display_name)
+            if not slug or slug in seen_slugs:
+                continue
+            seen_slugs.add(slug)
+            rows.append(
+                {
+                    "type": "location",
+                    "slug": slug,
+                    "display_name": display_name,
+                    "aliases": [],
+                    "description": "Provincia italiana",
+                    "external_refs": None,
+                    "is_curated": True,
+                }
+            )
+
+    if not rows:
+        return 0
+
+    stmt = pg_insert(Topic).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["slug"],
+        set_={
+            "type": stmt.excluded.type,
+            "display_name": stmt.excluded.display_name,
+            "description": stmt.excluded.description,
+            "is_curated": stmt.excluded.is_curated,
+        },
+    )
+    await session.execute(stmt)
+    return len(rows)
+
+
+async def load_municipalities_csv(
+    session: AsyncSession,
+    file_path: Path,
+    *,
+    encoding: str = "utf-8",
+) -> int:
+    """Carica i comuni italiani come `topics` con type='location' curated.
+
+    CSV ISTAT a 27+ colonne, separatore `;`. Indici colonne usati:
+      5  Denominazione (Italiana e straniera)   es. "Aldino/Aldein"
+      6  Denominazione in italiano              es. "Aldino"
+      10 Denominazione Regione
+      11 Denominazione provincia/città metropolitana
+      14 Sigla automobilistica                  es. "BZ"
+
+    Encoding: il file ISTAT originale è CP1252; supportiamo anche UTF-8.
+
+    Strategia anti-collisione slug: alcuni nomi sono duplicati (es. "Castro"
+    in BG e LE). Se il nome compare > 1 volta:
+      - slug = "{base}-{sigla_lower}"   es. castro-bg, castro-le
+      - display_name = "{nome} ({SIGLA})"   es. "Castro (BG)"
+    Altrimenti slug = base.
+
+    Aliases: nome bilingue se presente (es. "Aldein" come alias di "Aldino").
+    """
+    if not file_path.exists():
+        print(f"  [skip] {file_path} non esiste", file=sys.stderr)
+        return 0
+
+    import csv
+    from collections import Counter
+
+    from app.utils.slugify import slugify
+
+    raw_rows: list[dict[str, str]] = []
+    with file_path.open(encoding=encoding, newline="") as f:
+        reader = csv.reader(f, delimiter=";")
+        header_seen = False
+        for cols in reader:
+            if not cols or len(cols) < 15:
+                continue
+            # Salta header (riconosciuto da "Codice Regione" come prima cella,
+            # eventualmente seguito dal continuum dell'header su righe seguenti
+            # se sono presenti newline embedded nei nomi colonne quotati).
+            if not header_seen:
+                if cols[0].strip().lower().startswith("codice"):
+                    header_seen = True
+                    continue
+                # se la prima riga non è header, processiamo subito
+                header_seen = True
+            name_full = (cols[5] or "").strip()
+            name_it = (cols[6] or "").strip()
+            regione = (cols[10] or "").strip()
+            provincia = (cols[11] or "").strip()
+            sigla = (cols[14] or "").strip().upper()
+            if not name_it or not sigla:
+                continue
+            raw_rows.append(
+                {
+                    "name": name_it,
+                    "name_full": name_full,
+                    "regione": regione,
+                    "provincia": provincia,
+                    "sigla": sigla,
+                }
+            )
+
+    if not raw_rows:
+        return 0
+
+    name_counts: Counter[str] = Counter(r["name"] for r in raw_rows)
+
+    seen_slugs: set[str] = set()
+    rows: list[dict[str, Any]] = []
+    for r in raw_rows:
+        base = slugify(r["name"])
+        if not base:
+            continue
+        if name_counts[r["name"]] > 1:
+            slug = f"{base}-{r['sigla'].lower()}"
+            display_name = f"{r['name']} ({r['sigla']})"
+        else:
+            slug = base
+            display_name = r["name"]
+        # paranoia: collisione residua → suffisso progressivo
+        if slug in seen_slugs:
+            i = 2
+            while f"{slug}-{i}" in seen_slugs:
+                i += 1
+            slug = f"{slug}-{i}"
+        seen_slugs.add(slug)
+
+        aliases: list[str] = []
+        # Nome bilingue: "Aldino/Aldein" → alias "Aldein"
+        if "/" in r["name_full"]:
+            for part in r["name_full"].split("/"):
+                p = part.strip()
+                if p and p != r["name"] and p not in aliases:
+                    aliases.append(p)
+
+        rows.append(
+            {
+                "type": "location",
+                "slug": slug,
+                "display_name": display_name,
+                "aliases": aliases,
+                "description": f"Comune italiano ({r['provincia']}, {r['regione']})",
+                "external_refs": None,
+                "is_curated": True,
+            }
+        )
+
+    # Insert a chunk per evitare statement giganti (Postgres regge ma
+    # l'EXPLAIN diventa illeggibile se debugghi).
+    chunk = 500
+    total = 0
+    for i in range(0, len(rows), chunk):
+        batch = rows[i : i + chunk]
+        stmt = pg_insert(Topic).values(batch)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["slug"],
+            set_={
+                "type": stmt.excluded.type,
+                "display_name": stmt.excluded.display_name,
+                "aliases": stmt.excluded.aliases,
+                "description": stmt.excluded.description,
+                "is_curated": stmt.excluded.is_curated,
+            },
+        )
+        await session.execute(stmt)
+        total += len(batch)
+    return total
+
+
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Seed loader YOUFEED")
     parser.add_argument("--reserved-words", type=Path, default=None)
     parser.add_argument("--topics", type=Path, default=None)
     parser.add_argument("--featured", type=Path, default=None)
+    parser.add_argument(
+        "--provinces",
+        type=Path,
+        default=None,
+        help="CSV province italiane → topics(type=location, is_curated)",
+    )
+    parser.add_argument(
+        "--municipalities",
+        type=Path,
+        default=None,
+        help="CSV comuni italiani (ISTAT) → topics(type=location, is_curated)",
+    )
+    parser.add_argument(
+        "--municipalities-encoding",
+        default="utf-8",
+        help="Encoding CSV comuni: 'utf-8' (default) o 'cp1252' per file ISTAT originale",
+    )
     args = parser.parse_args()
 
     db_url = os.environ.get("DATABASE_URL")
@@ -225,6 +445,16 @@ async def main() -> None:
         if args.featured:
             n = await load_featured_sources(session, args.featured)
             print(f"  featured_sources upserted: {n}")
+        if args.provinces:
+            n = await load_provinces_csv(session, args.provinces)
+            print(f"  provinces (location topics) upserted: {n}")
+        if args.municipalities:
+            n = await load_municipalities_csv(
+                session,
+                args.municipalities,
+                encoding=args.municipalities_encoding,
+            )
+            print(f"  municipalities (location topics) upserted: {n}")
 
         await session.commit()
 

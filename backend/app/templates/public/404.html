@@ -1,0 +1,18 @@
+{% extends "public/base.html" %}
+
+{% block title %}Pagina non trovata — YouFeed{% endblock %}
+{% block description %}La pagina che cerchi non esiste.{% endblock %}
+
+{% block content %}
+<section class="yf-error">
+    <h1>404</h1>
+    <p class="yf-lead">
+        {% if reason == "username_not_found" %}
+        Nessun utente con questo nome su YouFeed.
+        {% else %}
+        La pagina che cerchi non esiste.
+        {% endif %}
+    </p>
+    <p><a class="yf-btn" href="/">Torna alla home</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block title %}Articolo #{{ article.id }}{% endblock %}
+{% block content %}
+<h1>Articolo #{{ article.id }}</h1>
+
+<div class="ya-card">
+    <h2>Metadati</h2>
+    <table class="ya-table">
+        <tr><th style="width: 200px;">Title</th><td><strong>{{ (article.raw_meta_lite or {}).get('title', '—') }}</strong></td></tr>
+        <tr><th>URL canonical</th><td><a href="{{ article.url_canonical }}" target="_blank" rel="noopener">{{ article.url_canonical }}</a></td></tr>
+        <tr><th>Source</th><td>
+            {% if source %}#{{ source.id }} · {{ source.title or source.url_site }} ({{ source.kind }}){% else %}—{% endif %}
+        </td></tr>
+        <tr><th>Author</th><td>{{ article.author or '—' }}</td></tr>
+        <tr><th>Published</th><td>{{ article.published_at.strftime('%Y-%m-%d %H:%M') if article.published_at else '—' }}</td></tr>
+        <tr><th>Ingested</th><td>{{ article.ingested_at.strftime('%Y-%m-%d %H:%M') if article.ingested_at else '—' }}</td></tr>
+        <tr><th>Status</th><td>
+            <span class="ya-badge ya-badge-{{ 'ok' if article.processing_status == 'indexed' else 'warn' }}">{{ article.processing_status }}</span>
+            {% if article.processing_error %}<span class="ya-badge ya-badge-danger">{{ article.processing_error }}</span>{% endif %}
+        </td></tr>
+        <tr><th>Read / Open</th><td>{{ article.read_count }} read · {{ article.open_count }} open</td></tr>
+        {% if article.image_url %}
+        <tr><th>Immagine</th><td>
+            <img src="{{ article.image_url }}" style="max-width: 200px; max-height: 100px;" loading="lazy">
+            {{ article.image_width }}×{{ article.image_height }} · status: {{ article.image_status }}
+        </td></tr>
+        {% endif %}
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>Topics estratti ({{ topics | length }})</h2>
+    {% if topics %}
+    <table class="ya-table">
+        <thead>
+            <tr><th>ID</th><th>Type</th><th>Display</th><th>Slug</th><th>Source</th><th>Position</th><th class="num">Score</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for tt in topics %}
+            <tr>
+                <td>{{ tt.topic.id }}</td>
+                <td><span class="ya-badge ya-badge-info">{{ tt.topic.type }}</span></td>
+                <td>{{ tt.topic.display_name }}</td>
+                <td><code class="ya-inline">{{ tt.topic.slug }}</code></td>
+                <td>
+                    {% if tt.source == 'dict' %}<span class="ya-badge ya-badge-ok">{{ tt.source }}</span>
+                    {% elif tt.source == 'regex' %}<span class="ya-badge ya-badge-warn">{{ tt.source }}</span>
+                    {% elif tt.source == 'composite' %}<span class="ya-badge ya-badge-info">{{ tt.source }}</span>
+                    {% else %}<span class="ya-badge ya-badge-mute">{{ tt.source }}</span>{% endif %}
+                </td>
+                <td><span class="ya-badge ya-badge-mute">{{ tt.position }}</span></td>
+                <td class="num">{{ "%.1f"|format(tt.score) }}</td>
+                <td><a href="/yf_admin/topics/{{ tt.topic.id }}">Edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="small">Nessun topic estratto. Possibili cause: titolo con "offerta/offerte" (skip), nessun match dict, body troppo corto.</p>
+    {% endif %}
+</div>
+
+<div class="ya-card">
+    <h2>raw_meta_lite</h2>
+    <pre class="ya-dump">{{ article.raw_meta_lite | tojson(indent=2) if article.raw_meta_lite else '(vuoto)' }}</pre>
+</div>
+
+{% if article.origin_taxonomy %}
+<div class="ya-card">
+    <h2>origin_taxonomy</h2>
+    <pre class="ya-dump">{{ article.origin_taxonomy | tojson(indent=2) }}</pre>
+</div>
+{% endif %}
+{% endblock %}

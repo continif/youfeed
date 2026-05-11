@@ -1,0 +1,111 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ profile_username }} — YouFeed{% endblock %}
+{% block description %}Feed pubblico di {{ profile_username }} su YouFeed: notizie aggregate da {{ source_count }} fonti italiane.{% endblock %}
+{% block rss_href %}/yf_users/{{ profile_username }}/feed.rss{% endblock %}
+
+{% block og %}
+{{ super() }}
+{% if items and items[0].image_local_url %}
+<meta property="og:image" content="{{ items[0].image_local_url }}">
+<meta name="twitter:image" content="{{ items[0].image_local_url }}">
+{% elif items and items[0].image_url %}
+<meta property="og:image" content="{{ items[0].image_url }}">
+<meta name="twitter:image" content="{{ items[0].image_url }}">
+{% endif %}
+{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": {{ profile_username | tojson }},
+  "description": "Feed pubblico di {{ profile_username }} su YouFeed",
+  "url": {{ canonical_url | tojson if canonical_url else '""' | safe }},
+  "inLanguage": "it",
+  {% if items %}
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": {{ items | length }},
+    "itemListElement": [
+      {% for item in items[:20] %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "url": {{ item.url_canonical | tojson }},
+        "name": {{ item.title | tojson }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  {% endif %}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="yf-profile-header">
+    <h1>{{ profile_username }}</h1>
+    <p class="yf-lead">
+        {{ source_count }} fonti pubbliche ·
+        <a href="/yf_users/{{ profile_username }}/feed.rss">Feed RSS</a>
+    </p>
+</section>
+
+{% if not items %}
+<p class="yf-empty">Questo profilo non ha ancora articoli pubblici.</p>
+{% else %}
+<section class="yf-masonry" role="feed" aria-label="Articoli">
+    {% for item in items %}
+    <article class="yf-card" data-article-id="{{ item.id }}"
+             {% if item.category_color %}style="border-color: {{ item.category_color }}; border-width: 2px;"{% endif %}>
+        {% set img = item.image_local_url or item.image_url %}
+        {% if img %}
+        <a class="yf-card-image-link" href="{{ item.url_canonical }}" rel="noopener" target="_blank">
+            <img class="yf-card-image"
+                 src="{{ img }}"
+                 alt="{{ item.title | e }}"
+                 loading="lazy"
+                 {% if item.image_width and item.image_height %}
+                 width="{{ item.image_width }}" height="{{ item.image_height }}"
+                 {% endif %}>
+            <time class="yf-card-image-time" datetime="{{ item.published_at.isoformat() }}">
+                {{ item.published_at.strftime('%d %b · %H:%M') }}
+            </time>
+        </a>
+        {% endif %}
+        <div class="yf-card-body">
+            <h2 class="yf-card-title">
+                <a href="{{ item.url_canonical }}" rel="noopener" target="_blank">{{ item.title }}</a>
+            </h2>
+            {% if item.description %}
+            <p class="yf-card-desc">{{ item.description | striptags | truncate(180) }}</p>
+            {% endif %}
+            <footer class="yf-card-meta">
+                <span class="yf-card-source">{{ item.source.title or item.source.url_site }}</span>
+                {% if not img %}
+                <time datetime="{{ item.published_at.isoformat() }}">
+                    {{ item.published_at.strftime('%d %b %Y · %H:%M') }}
+                </time>
+                {% endif %}
+            </footer>
+            {% if item.topics %}
+            <ul class="yf-card-topics">
+                {% for t in item.topics %}
+                <li class="yf-topic yf-topic-{{ t.type }}">{{ t.display_name }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+</section>
+
+{% if next_cursor %}
+<p class="yf-pager">
+    <a href="?cursor={{ next_cursor }}">Articoli più vecchi →</a>
+</p>
+{% endif %}
+{% endif %}
+{% endblock %}

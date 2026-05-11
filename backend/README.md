@@ -64,3 +64,62 @@ alembic revision --autogenerate -m "descrizione"   # nuova migration
 alembic upgrade head           # applica
 alembic downgrade -1           # rollback ultima
 ```
+
+## Dataset & snapshot
+
+### Seed loader — [`app/utils/seed_loader.py`](app/utils/seed_loader.py)
+
+Carica dataset curated nelle tabelle dell'app (idempotente, UPSERT su chiave naturale).
+
+```bash
+# Province italiane (CSV custom) → topics(type=location, is_curated=true)
+python -m app.utils.seed_loader --provinces ../data/topics/province.csv
+
+# Comuni italiani (CSV ISTAT, encoding cp1252) → topics(type=location, is_curated=true)
+#   Gestisce collisioni di nome (es. Castro BG/LE → slug "castro-bg" / "castro-le",
+#   display "Castro (BG)" / "Castro (LE)") e nomi bilingui Alto Adige/Valle d'Aosta
+#   (es. "Aldino/Aldein" → display "Aldino", aliases ["Aldein"]).
+python -m app.utils.seed_loader \
+    --municipalities ../data/topics/Elenco-comuni-italiani.csv \
+    --municipalities-encoding cp1252
+
+# Altri dataset
+python -m app.utils.seed_loader --reserved-words ../Claude/reserved-words.txt
+python -m app.utils.seed_loader --topics ../data/topics/topics.csv
+python -m app.utils.seed_loader --featured ../data/topics/featured.csv
+```
+
+Per l'estrazione "argomento di cronaca" il classifier deve riconoscere ogni
+comune italiano (anche piccoli: Avetrana, Garlasco, ...): si carica l'intero
+elenco ISTAT (~7900 comuni) come `is_curated=true`.
+
+### Snapshot Parquet dei topics — [`app/utils/topics_snapshot.py`](app/utils/topics_snapshot.py)
+
+Backup portabile di tutti i `topics` (qualunque `type`: `location`, `brand`,
+`person`, `subject`, `model`) in un singolo file Parquet (zstd, level 9). Pensato
+per bootstrap del DB da zero senza ripartire dai CSV grezzi e dalla logica di
+slug anti-collisione.
+
+```bash
+# Export — tutti i type, solo curated (default)
+python -m app.utils.topics_snapshot export --out ../data/topics.parquet
+
+# Export — anche i topics non-curated (es. estratti automaticamente da ingestion)
+python -m app.utils.topics_snapshot export --include-uncurated --out ../data/topics.parquet
+
+# Export — un solo type
+python -m app.utils.topics_snapshot export --type location --out ../data/locations.parquet
+
+# Import — UPSERT su slug, idempotente
+python -m app.utils.topics_snapshot import --in ../data/topics.parquet
+```
+
+Schema del Parquet (vedi `SCHEMA` nel modulo): `type`, `slug`, `display_name`,
+`aliases` (`list<string>`), `description`, `external_refs` (JSON-encoded —
+Parquet non ha un tipo JSONB), `is_curated`. Lo schema è coperto da
+[`tests/integration/test_topics_snapshot.py`](tests/integration/test_topics_snapshot.py)
+per evitare regressioni silenziose cross-versione.
+
+Il file canonico [`data/topics.parquet`](../data/topics.parquet) è committato
+nel repo: serve come bootstrap "1 comando" su un'installazione vergine
+(`python -m app.utils.topics_snapshot import --in ../data/topics.parquet`).

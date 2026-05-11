@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+
+import httpx
+import pytest
 from selectolax.parser import HTMLParser
 
 from app.ingestion import discovery
-
 
 # ---------------------------------------------------------------------------
 # Parsing feed (RSS/Atom/JSON Feed)
@@ -170,6 +173,154 @@ def test_extract_og_fallback_title() -> None:
     assert og.image is None
     # Favicon di fallback
     assert og.favicon == "https://example.com/favicon.ico"
+
+
+# ---------------------------------------------------------------------------
+# Bot-challenge title sanitization
+# ---------------------------------------------------------------------------
+
+
+def test_looks_like_bot_challenge_matches_known_strings() -> None:
+    assert discovery._looks_like_bot_challenge("Just a moment...")
+    assert discovery._looks_like_bot_challenge("Attention Required! | Cloudflare")
+    assert discovery._looks_like_bot_challenge("Access denied")
+    assert discovery._looks_like_bot_challenge("Checking your browser before…")
+    # Case insensitive
+    assert discovery._looks_like_bot_challenge("JUST A MOMENT")
+
+
+def test_looks_like_bot_challenge_skips_real_titles() -> None:
+    assert not discovery._looks_like_bot_challenge("Corriere della Sera")
+    assert not discovery._looks_like_bot_challenge("Il sito di esempio")
+    assert not discovery._looks_like_bot_challenge(None)
+    assert not discovery._looks_like_bot_challenge("")
+
+
+def test_extract_og_drops_bot_challenge_title() -> None:
+    """Cloudflare challenge → og.title messo a None così il chiamante può ripiegare."""
+    html = HTMLParser(
+        '<html><head><title>Just a moment...</title>'
+        '<meta property="og:title" content="Just a moment..."></head></html>'
+    )
+    og = discovery._extract_og(html, "https://example.com")
+    assert og.title is None
+
+
+# ---------------------------------------------------------------------------
+# End-to-end: bot-challenge fallback in _discover_inner
+# ---------------------------------------------------------------------------
+
+
+_RSS_FEED_BYTES = (
+    b'<?xml version="1.0"?>'
+    b'<rss version="2.0"><channel>'
+    b"<title>Sito Reale</title>"
+    b"<link>https://example.com</link>"
+    b"<description>desc</description>"
+    b"<item><title>Articolo</title><link>https://example.com/a</link></item>"
+    b"</channel></rss>"
+)
+
+
+_CHALLENGE_HTML = (
+    b"<html><head><title>Just a moment...</title></head>"
+    b'<body><link rel="alternate" type="application/rss+xml" '
+    b'href="https://example.com/feed"></body></html>'
+)
+
+
+_CHALLENGE_HTML_WITH_FEED_LINK = (
+    b'<html><head><title>Just a moment...</title>'
+    b'<link rel="alternate" type="application/rss+xml" '
+    b'href="https://example.com/feed"></head></html>'
+)
+
+
+@pytest.mark.asyncio
+async def test_discover_inner_falls_back_to_feed_title_under_cloudflare() -> None:
+    """Sito dietro Cloudflare → og.title diventa il `<channel><title>` del feed."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if url.endswith("/feed"):
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/rss+xml"},
+                content=_RSS_FEED_BYTES,
+            )
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/html"},
+            content=_CHALLENGE_HTML_WITH_FEED_LINK,
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        result = await discovery._discover_inner(client, "https://example.com/")
+
+    assert result.kind == "rss"
+    assert result.og.title == "Sito Reale"
+    assert result.candidates[0].title == "Sito Reale"
+
+
+@pytest.mark.asyncio
+async def test_discover_inner_direct_feed_url_populates_og_title() -> None:
+    """URL diretto a un feed RSS → og.title è il titolo del feed (non più None)."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/rss+xml"},
+            content=_RSS_FEED_BYTES,
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        result = await discovery._discover_inner(
+            client, "https://example.com/feed"
+        )
+
+    assert result.kind == "rss"
+    assert result.og.title == "Sito Reale"
+
+
+@pytest.mark.asyncio
+async def test_discover_inner_wp_api_falls_back_to_wpjson_name() -> None:
+    """Sito WordPress dietro Cloudflare → og.title preso da `/wp-json/` root."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if url.endswith("/wp-json/wp/v2/posts?per_page=1"):
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=b"[]",
+            )
+        if url.endswith("/wp-json") or url.endswith("/wp-json/"):
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json"},
+                content=json.dumps(
+                    {"name": "FinanzaOnline", "description": "..."}
+                ).encode(),
+            )
+        # HTML challenge con link a wp-json
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/html"},
+            content=(
+                b'<html><head><title>Just a moment...</title>'
+                b'<link rel="https://api.w.org/" '
+                b'href="https://example.com/wp-json/"></head></html>'
+            ),
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        result = await discovery._discover_inner(client, "https://example.com/")
+
+    assert result.kind == "wordpress_api"
+    assert result.og.title == "FinanzaOnline"
 
 
 # ---------------------------------------------------------------------------

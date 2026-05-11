@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+{% block title %}Regole · {{ label }}{% endblock %}
+{% block content %}
+<h1>Regole estrazione</h1>
+
+<div class="ya-filters" style="margin-bottom: 12px;">
+    {% for slug, sec_label, sec_kind, active in sections %}
+    <a href="/yf_admin/rules/{{ slug }}"
+       class="ya-btn {% if active %}ya-btn-secondary{% endif %}"
+       style="{% if active %}font-weight:600;{% endif %}">{{ sec_label }}</a>
+    {% endfor %}
+    <form action="/yf_admin/cache/reload" method="post" style="margin-left: auto;">
+        <button class="ya-btn ya-btn-secondary" type="submit" title="Forza il reload delle regole dal DB al prossimo classify.">
+            ↻ Ricarica cache classify
+        </button>
+    </form>
+</div>
+
+<div class="ya-card">
+    <h2>{{ label }} ({{ total }}) <span class="ya-badge ya-badge-mute">{{ kind }}</span></h2>
+    <p class="small">{{ descr }}</p>
+
+    <form action="/yf_admin/rules" method="post" class="ya-filters">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <input type="text" name="term" placeholder="Nuovo termine" required style="flex: 1;">
+        <input type="text" name="note" placeholder="Note (opzionale)" style="flex: 1;">
+        <button type="submit">+ Aggiungi</button>
+    </form>
+
+    <table class="ya-table">
+        <thead><tr><th>Term</th><th>Note</th><th>Aggiunto</th><th></th></tr></thead>
+        <tbody>
+            {% for r in rules %}
+            <tr>
+                <td><code class="ya-inline">{{ r.term }}</code></td>
+                <td class="small">{{ r.note or '—' }}</td>
+                <td class="small">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '—' }}</td>
+                <td>
+                    <form action="/yf_admin/rules/{{ r.id }}/delete" method="post"
+                          onsubmit="return confirm('Eliminare la regola \'{{ r.term }}\'?')">
+                        <button class="ya-btn ya-btn-danger" type="submit">Elimina</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="small">Nessuna regola in questa sezione.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

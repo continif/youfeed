@@ -353,6 +353,17 @@
   aliases: ["IA", "AI", "intelligenza artificiale generativa"]
   wikidata: Q11660
 
+- slug: ai-act
+  type: subject
+  display_name: AI Act
+  aliases:
+    - "EU AI Act"
+    - "Artificial Intelligence Act"
+    - "Regolamento sull'intelligenza artificiale"
+    - "Regolamento sull'IA"
+    - "Regolamento europeo sull'intelligenza artificiale"
+  wikidata: Q113652399
+
 - slug: cambiamento-climatico
   type: subject
   display_name: Cambiamento climatico
@@ -377,13 +388,1355 @@
   wikidata: Q108593911
 
 # ============================================================
-# TODO — espandere a 200-500 entries:
+# BRAND — telco italiane
+# ============================================================
+- slug: fastweb
+  type: brand
+  display_name: Fastweb
+  aliases: ["Fastweb SpA"]
+  wikidata: Q1396985
+
+- slug: iliad
+  type: brand
+  display_name: Iliad
+  aliases: ["Iliad Italia"]
+  wikidata: Q1660653
+
+- slug: vodafone
+  type: brand
+  display_name: Vodafone
+  aliases: ["Vodafone Italia", "Vodafone Group"]
+  wikidata: Q122141
+
+- slug: windtre
+  type: brand
+  display_name: WindTre
+  # Niente alias "Wind"/"Tre" puri: troppo ambigui (matchano "Wind" in "Windi"
+  # solo se boundary funzionasse su tutto; "Tre" matcha il numero italiano).
+  aliases: ["Wind Tre", "Wind 3", "Wind3"]
+  wikidata: Q3568417
+
+- slug: postemobile
+  type: brand
+  display_name: PosteMobile
+  aliases: ["Poste Mobile"]
+  wikidata: Q3905295
+
+- slug: eolo
+  type: brand
+  display_name: Eolo
+  aliases: ["Eolo SpA"]
+  wikidata: Q15914953
+
+- slug: sky-wifi
+  type: brand
+  display_name: Sky Wifi
+  aliases: ["Sky WiFi"]
+
+- slug: ho-mobile
+  type: brand
+  display_name: ho. Mobile
+  aliases: ["ho.mobile", "ho mobile"]
+
+# ============================================================
+# BRAND — tech / elettronica di consumo
+# ============================================================
+- slug: razer
+  type: brand
+  display_name: Razer
+  aliases: ["Razer Inc"]
+  wikidata: Q1958675
+
+- slug: lenovo
+  type: brand
+  display_name: Lenovo
+  aliases: ["Lenovo Group"]
+  wikidata: Q189441
+
+- slug: logitech
+  type: brand
+  display_name: Logitech
+  aliases: ["Logitech International"]
+  wikidata: Q170415
+
+- slug: asus
+  type: brand
+  display_name: Asus
+  aliases: ["ASUS", "ASUSTeK"]
+  wikidata: Q170418
+
+- slug: acer
+  type: brand
+  display_name: Acer
+  aliases: ["Acer Inc"]
+  wikidata: Q170420
+
+- slug: msi
+  type: brand
+  display_name: MSI
+  aliases: ["Micro-Star International"]
+  wikidata: Q1361279
+
+- slug: hp
+  type: brand
+  display_name: HP
+  aliases: ["Hewlett-Packard", "Hewlett Packard"]
+  wikidata: Q14773269
+
+- slug: dell
+  type: brand
+  display_name: Dell
+  aliases: ["Dell Technologies"]
+  wikidata: Q188504
+
+- slug: huawei
+  type: brand
+  display_name: Huawei
+  aliases: ["Huawei Technologies"]
+  wikidata: Q160120
+
+- slug: xiaomi
+  type: brand
+  display_name: Xiaomi
+  aliases: ["Xiaomi Inc", "Xiaomi Corporation"]
+  wikidata: Q1093336
+
+- slug: oneplus
+  type: brand
+  display_name: OnePlus
+  aliases: ["One Plus"]
+  wikidata: Q15630915
+
+- slug: realme
+  type: brand
+  display_name: Realme
+  aliases: []
+  wikidata: Q63064559
+
+- slug: honor
+  type: brand
+  display_name: Honor
+  aliases: ["Honor Device"]
+  wikidata: Q22683175
+
+- slug: oppo
+  type: brand
+  display_name: Oppo
+  aliases: ["OPPO"]
+  wikidata: Q1023312
+
+- slug: nothing
+  type: brand
+  display_name: Nothing
+  aliases: ["Nothing Technology"]
+  wikidata: Q108089605
+
+- slug: samsung
+  type: brand
+  display_name: Samsung
+  aliases: ["Samsung Electronics"]
+  wikidata: Q20718
+
+- slug: sony
+  type: brand
+  display_name: Sony
+  aliases: ["Sony Group", "Sony Corporation"]
+  wikidata: Q41187
+
+- slug: lg
+  type: brand
+  display_name: LG
+  aliases: ["LG Electronics"]
+  wikidata: Q138913
+
+- slug: bose
+  type: brand
+  display_name: Bose
+  aliases: ["Bose Corporation"]
+  wikidata: Q1023932
+
+- slug: jbl
+  type: brand
+  display_name: JBL
+  aliases: []
+  wikidata: Q310953
+
+# ============================================================
+# BRAND — retail / GDO IT
+# ============================================================
+- slug: esselunga
+  type: brand
+  display_name: Esselunga
+  aliases: []
+  wikidata: Q1376130
+
+- slug: coop
+  type: brand
+  display_name: Coop
+  aliases: ["Coop Italia"]
+  wikidata: Q3697276
+
+- slug: conad
+  type: brand
+  display_name: Conad
+  aliases: []
+  wikidata: Q536290
+
+- slug: lidl
+  type: brand
+  display_name: Lidl
+  aliases: []
+  wikidata: Q151954
+
+- slug: eurospin
+  type: brand
+  display_name: Eurospin
+  aliases: []
+  wikidata: Q3760544
+
+- slug: carrefour
+  type: brand
+  display_name: Carrefour
+  aliases: []
+  wikidata: Q156712
+
+- slug: mediaworld
+  type: brand
+  display_name: MediaWorld
+  aliases: ["Media World", "MediaMarkt"]
+  wikidata: Q700272
+
+- slug: unieuro
+  type: brand
+  display_name: Unieuro
+  aliases: []
+  wikidata: Q4001362
+
+- slug: trony
+  type: brand
+  display_name: Trony
+  aliases: []
+
+- slug: euronics
+  type: brand
+  display_name: Euronics
+  aliases: []
+  wikidata: Q1379167
+
+- slug: ikea
+  type: brand
+  display_name: IKEA
+  aliases: ["Ikea"]
+  wikidata: Q23823
+
+# ============================================================
+# BRAND — auto / motori IT
+# ============================================================
+- slug: fiat
+  type: brand
+  display_name: Fiat
+  aliases: ["FIAT"]
+  wikidata: Q27597
+
+- slug: alfa-romeo
+  type: brand
+  display_name: Alfa Romeo
+  aliases: []
+  wikidata: Q26460
+
+- slug: lancia
+  type: brand
+  display_name: Lancia
+  aliases: []
+  wikidata: Q35777
+
+- slug: maserati
+  type: brand
+  display_name: Maserati
+  aliases: []
+  wikidata: Q35777
+
+- slug: lamborghini
+  type: brand
+  display_name: Lamborghini
+  aliases: ["Automobili Lamborghini"]
+  wikidata: Q31230
+
+- slug: ducati
+  type: brand
+  display_name: Ducati
+  aliases: ["Ducati Motor"]
+  wikidata: Q83458
+
+- slug: aprilia
+  type: brand
+  display_name: Aprilia
+  aliases: []
+  wikidata: Q3320059
+
+- slug: piaggio
+  type: brand
+  display_name: Piaggio
+  aliases: ["Piaggio Group"]
+  wikidata: Q210077
+
+- slug: vespa
+  type: brand
+  display_name: Vespa
+  aliases: []
+  wikidata: Q173827
+
+- slug: iveco
+  type: brand
+  display_name: Iveco
+  aliases: []
+  wikidata: Q499726
+
+- slug: jeep
+  type: brand
+  display_name: Jeep
+  aliases: []
+  wikidata: Q172648
+
+- slug: ford
+  type: brand
+  display_name: Ford
+  aliases: ["Ford Motor", "Ford Motor Company"]
+  wikidata: Q44294
+
+- slug: geely
+  type: brand
+  display_name: Geely
+  aliases: ["Geely Auto", "Zhejiang Geely Holding Group"]
+  wikidata: Q5532671
+
+- slug: bmw
+  type: brand
+  display_name: BMW
+  aliases: ["Bayerische Motoren Werke"]
+  wikidata: Q26678
+
+- slug: mercedes
+  type: brand
+  display_name: Mercedes-Benz
+  aliases: ["Mercedes Benz", "Mercedes"]
+  wikidata: Q36008
+
+- slug: audi
+  type: brand
+  display_name: Audi
+  aliases: ["Audi AG"]
+  wikidata: Q23317
+
+- slug: volkswagen
+  type: brand
+  display_name: Volkswagen
+  aliases: ["VW", "Volkswagen AG"]
+  wikidata: Q246
+
+- slug: porsche
+  type: brand
+  display_name: Porsche
+  aliases: ["Porsche AG"]
+  wikidata: Q40993
+
+- slug: toyota
+  type: brand
+  display_name: Toyota
+  aliases: ["Toyota Motor"]
+  wikidata: Q53268
+
+- slug: hyundai
+  type: brand
+  display_name: Hyundai
+  aliases: ["Hyundai Motor"]
+  wikidata: Q55931
+
+- slug: kia
+  type: brand
+  display_name: Kia
+  aliases: ["Kia Motors"]
+  wikidata: Q35349
+
+- slug: nissan
+  type: brand
+  display_name: Nissan
+  aliases: ["Nissan Motor"]
+  wikidata: Q35865
+
+- slug: renault
+  type: brand
+  display_name: Renault
+  aliases: []
+  wikidata: Q6686
+
+- slug: peugeot
+  type: brand
+  display_name: Peugeot
+  aliases: []
+  wikidata: Q6742
+
+- slug: byd
+  type: brand
+  display_name: BYD
+  aliases: ["BYD Auto", "BYD Company"]
+  wikidata: Q186298
+
+- slug: brembo
+  type: brand
+  display_name: Brembo
+  aliases: ["Brembo SpA"]
+  wikidata: Q635591
+
+- slug: magneti-marelli
+  type: brand
+  display_name: Magneti Marelli
+  aliases: ["Marelli"]
+  wikidata: Q1885320
+
+- slug: bosch
+  type: brand
+  display_name: Bosch
+  aliases: ["Robert Bosch", "Bosch GmbH"]
+  wikidata: Q234021
+
+- slug: continental
+  type: brand
+  display_name: Continental
+  aliases: ["Continental AG"]
+  wikidata: Q163945
+
+# ============================================================
+# BRAND — gaming / consumer electronics aggiuntivi
+# ============================================================
+- slug: xbox
+  type: brand
+  display_name: Xbox
+  aliases: ["XBOX"]
+  wikidata: Q132489
+
+- slug: playstation
+  type: brand
+  display_name: PlayStation
+  aliases: ["PS5", "PS4", "Sony PlayStation"]
+  wikidata: Q11086
+
+- slug: nintendo
+  type: brand
+  display_name: Nintendo
+  aliases: ["Nintendo Switch"]
+  wikidata: Q8093
+
+- slug: surface
+  type: brand
+  display_name: Surface
+  aliases: ["Microsoft Surface"]
+  wikidata: Q1339535
+
+- slug: technics
+  type: brand
+  display_name: Technics
+  aliases: []
+  wikidata: Q1759252
+
+- slug: dreame
+  type: brand
+  display_name: Dreame
+  aliases: ["Dreame Technology"]
+  wikidata: Q105538097
+
+- slug: deepseek
+  type: brand
+  display_name: DeepSeek
+  aliases: ["Deep Seek"]
+  wikidata: Q124747197
+
+- slug: facebook
+  type: brand
+  display_name: Facebook
+  aliases: []
+  wikidata: Q355
+
+- slug: instagram
+  type: brand
+  display_name: Instagram
+  aliases: []
+  wikidata: Q209330
+
+- slug: whatsapp
+  type: brand
+  display_name: WhatsApp
+  aliases: ["Whats App"]
+  wikidata: Q1049511
+
+- slug: telegram
+  type: brand
+  display_name: Telegram
+  aliases: []
+  wikidata: Q1411910
+
+- slug: signal
+  type: brand
+  display_name: Signal
+  aliases: ["Signal Messenger"]
+  wikidata: Q23789498
+
+- slug: x-twitter
+  type: brand
+  display_name: X
+  aliases: ["Twitter", "X (Twitter)"]
+  wikidata: Q918
+
+- slug: linkedin
+  type: brand
+  display_name: LinkedIn
+  aliases: []
+  wikidata: Q446453
+
+- slug: reddit
+  type: brand
+  display_name: Reddit
+  aliases: []
+  wikidata: Q1136
+
+- slug: discord
+  type: brand
+  display_name: Discord
+  aliases: []
+  wikidata: Q21062777
+
+# ============================================================
+# LOCATION — Europa + altri paesi/aree
+# ============================================================
+- slug: europa
+  type: location
+  display_name: Europa
+  aliases: ["Unione Europea", "UE", "EU", "European Union", "Stati europei", "stati europei"]
+  wikidata: Q458
+
+- slug: cipro
+  type: location
+  display_name: Cipro
+  aliases: ["Republic of Cyprus"]
+  wikidata: Q229
+
+- slug: turchia
+  type: location
+  display_name: Turchia
+  aliases: ["Turkey"]
+  wikidata: Q43
+
+- slug: india
+  type: location
+  display_name: India
+  aliases: []
+  wikidata: Q668
+
+- slug: brasile
+  type: location
+  display_name: Brasile
+  aliases: ["Brazil"]
+  wikidata: Q155
+
+- slug: canada
+  type: location
+  display_name: Canada
+  aliases: []
+  wikidata: Q16
+
+# ============================================================
+# SUBJECT — politica/diritto/economia (entità ricorrenti)
+# ============================================================
+- slug: corte-ue
+  type: subject
+  display_name: Corte UE
+  aliases: ["Corte di Giustizia UE", "Corte di giustizia europea", "Corte europea"]
+  wikidata: Q53913
+
+- slug: corte-costituzionale
+  type: subject
+  display_name: Corte Costituzionale
+  aliases: ["Consulta"]
+  wikidata: Q1267850
+
+- slug: corte-suprema
+  type: subject
+  display_name: Corte Suprema
+  aliases: ["Cassazione", "Corte di Cassazione"]
+  wikidata: Q12873
+
+- slug: bce
+  type: subject
+  display_name: BCE
+  aliases: ["Banca Centrale Europea", "European Central Bank", "ECB"]
+  wikidata: Q8901
+
+- slug: nato
+  type: subject
+  display_name: NATO
+  aliases: ["Alleanza Atlantica"]
+  wikidata: Q7184
+
+- slug: onu
+  type: subject
+  display_name: ONU
+  aliases: ["Nazioni Unite", "United Nations", "UN"]
+  wikidata: Q1065
+
+- slug: ocse
+  type: subject
+  display_name: OCSE
+  aliases: ["OECD"]
+  wikidata: Q7825
+
+- slug: dazi
+  type: subject
+  display_name: Dazi
+  aliases: ["dazi commerciali", "tariffe doganali"]
+
+- slug: reddito-di-cittadinanza
+  type: subject
+  display_name: Reddito di cittadinanza
+  aliases: ["RdC", "reddito di cittadinanza"]
+  wikidata: Q60759094
+
+- slug: giro-d-italia
+  type: subject
+  display_name: Giro d'Italia
+  aliases: ["Giro", "Corsa Rosa"]
+  wikidata: Q33881
+
+- slug: tour-de-france
+  type: subject
+  display_name: Tour de France
+  aliases: ["Tour"]
+  wikidata: Q33990
+
+- slug: vuelta
+  type: subject
+  display_name: Vuelta a España
+  aliases: ["Vuelta"]
+  wikidata: Q33999
+
+# ============================================================
+# BRAND — banche / fintech IT
+# ============================================================
+- slug: mps
+  type: brand
+  display_name: Monte dei Paschi di Siena
+  aliases: ["MPS", "Banca MPS", "Monte Paschi"]
+  wikidata: Q806175
+
+- slug: mediobanca
+  type: brand
+  display_name: Mediobanca
+  aliases: []
+  wikidata: Q1278476
+
+- slug: banco-bpm
+  type: brand
+  display_name: Banco BPM
+  aliases: ["BPM"]
+  wikidata: Q24023527
+
+- slug: bper
+  type: brand
+  display_name: BPER Banca
+  aliases: ["BPER"]
+  wikidata: Q3637724
+
+- slug: nexi
+  type: brand
+  display_name: Nexi
+  aliases: ["Nexi SpA"]
+  wikidata: Q60870938
+
+- slug: satispay
+  type: brand
+  display_name: Satispay
+  aliases: []
+  wikidata: Q86700091
+
+- slug: n26
+  type: brand
+  display_name: N26
+  aliases: []
+  wikidata: Q21680507
+
+- slug: revolut
+  type: brand
+  display_name: Revolut
+  aliases: []
+  wikidata: Q26298594
+
+- slug: hype
+  type: brand
+  display_name: Hype
+  aliases: []
+
+# ============================================================
+# BRAND — media / streaming
+# ============================================================
+- slug: rai
+  type: brand
+  display_name: Rai
+  aliases: ["RAI", "Radiotelevisione italiana"]
+  wikidata: Q183842
+
+- slug: mediaset
+  type: brand
+  display_name: Mediaset
+  aliases: []
+  wikidata: Q183829
+
+- slug: sky-italia
+  type: brand
+  display_name: Sky Italia
+  aliases: ["Sky"]
+  wikidata: Q636300
+
+- slug: la7
+  type: brand
+  display_name: La7
+  aliases: ["LA7"]
+  wikidata: Q663881
+
+- slug: dazn
+  type: brand
+  display_name: DAZN
+  aliases: ["Dazn"]
+  wikidata: Q23958337
+
+- slug: discovery-plus
+  type: brand
+  display_name: Discovery+
+  aliases: ["Discovery Plus", "discovery+"]
+  wikidata: Q104884458
+
+- slug: netflix
+  type: brand
+  display_name: Netflix
+  aliases: []
+  wikidata: Q907311
+
+- slug: prime-video
+  type: brand
+  display_name: Prime Video
+  aliases: ["Amazon Prime Video"]
+  wikidata: Q3482722
+
+- slug: disney-plus
+  type: brand
+  display_name: Disney+
+  aliases: ["Disney Plus"]
+  wikidata: Q60707554
+
+- slug: spotify
+  type: brand
+  display_name: Spotify
+  aliases: []
+  wikidata: Q689141
+
+- slug: youtube
+  type: brand
+  display_name: YouTube
+  aliases: []
+  wikidata: Q866
+
+- slug: tiktok
+  type: brand
+  display_name: TikTok
+  aliases: ["Tik Tok"]
+  wikidata: Q19711995
+
+- slug: now-tv
+  type: brand
+  display_name: NOW
+  aliases: ["NOW TV", "Now TV", "NowTV", "Now"]
+  wikidata: Q11722826
+
+- slug: sky-on-demand
+  type: brand
+  display_name: Sky On Demand
+  aliases: ["Sky OnDemand"]
+
+# ============================================================
+# BRAND — chip / silicon (rilevanti per news tech)
+# ============================================================
+- slug: qualcomm
+  type: brand
+  display_name: Qualcomm
+  aliases: ["Qualcomm Inc"]
+  wikidata: Q121754
+
+- slug: snapdragon
+  type: brand
+  display_name: Snapdragon
+  aliases: []
+  wikidata: Q1547068
+
+- slug: mediatek
+  type: brand
+  display_name: MediaTek
+  aliases: ["Media Tek"]
+  wikidata: Q717206
+
+- slug: intel
+  type: brand
+  display_name: Intel
+  aliases: ["Intel Corporation"]
+  wikidata: Q248
+
+- slug: amd
+  type: brand
+  display_name: AMD
+  aliases: ["Advanced Micro Devices"]
+  wikidata: Q128896
+
+- slug: arm
+  type: brand
+  display_name: ARM
+  aliases: ["ARM Holdings"]
+  wikidata: Q193563
+
+- slug: tsmc
+  type: brand
+  display_name: TSMC
+  aliases: ["Taiwan Semiconductor"]
+  wikidata: Q170321
+
+# ============================================================
+# BRAND — piccoli elettrodomestici / accessori (recensioni e-commerce)
+# ============================================================
+- slug: levoit
+  type: brand
+  display_name: Levoit
+  aliases: []
+
+- slug: dyson
+  type: brand
+  display_name: Dyson
+  aliases: ["Dyson Ltd"]
+  wikidata: Q166262
+
+- slug: roborock
+  type: brand
+  display_name: Roborock
+  aliases: []
+  wikidata: Q97053253
+
+- slug: ecovacs
+  type: brand
+  display_name: Ecovacs
+  aliases: ["ECOVACS"]
+  wikidata: Q5331486
+
+- slug: xiaomi-redmi
+  type: brand
+  display_name: Redmi
+  aliases: []
+  wikidata: Q24875772
+
+- slug: jabra
+  type: brand
+  display_name: Jabra
+  aliases: []
+  wikidata: Q1656987
+
+- slug: anker
+  type: brand
+  display_name: Anker
+  aliases: ["Anker Innovations"]
+  wikidata: Q22132595
+
+- slug: fitbit
+  type: brand
+  display_name: Fitbit
+  aliases: []
+  wikidata: Q3072394
+
+- slug: garmin
+  type: brand
+  display_name: Garmin
+  aliases: ["Garmin Ltd"]
+  wikidata: Q485098
+
+- slug: oura
+  type: brand
+  display_name: Oura
+  aliases: ["Oura Ring"]
+  wikidata: Q116600611
+
+- slug: remarkable
+  type: brand
+  display_name: reMarkable
+  aliases: ["Remarkable"]
+  wikidata: Q108837538
+
+# ============================================================
+# BRAND — farmaceutica IT
+# ============================================================
+- slug: angelini
+  type: brand
+  display_name: Angelini
+  aliases: ["Angelini Holding", "Angelini Pharma"]
+  wikidata: Q20021867
+
+- slug: catalyst
+  type: brand
+  display_name: Catalyst
+  aliases: ["Catalyst Pharmaceutical"]
+  wikidata: Q5051956
+
+- slug: chiesi
+  type: brand
+  display_name: Chiesi
+  aliases: ["Chiesi Farmaceutici"]
+  wikidata: Q1075571
+
+- slug: recordati
+  type: brand
+  display_name: Recordati
+  aliases: ["Recordati SpA"]
+  wikidata: Q3916717
+
+- slug: menarini
+  type: brand
+  display_name: Menarini
+  aliases: ["Menarini Group"]
+  wikidata: Q1646149
+
+- slug: visionox
+  type: brand
+  display_name: Visionox
+  aliases: []
+  wikidata: Q42316125
+
+# ============================================================
+# LOCATION — paesi/aree non-italiane di interesse cronaca/economia
+# ============================================================
+- slug: cina
+  type: location
+  display_name: Cina
+  aliases: ["Repubblica Popolare Cinese", "China", "RPC"]
+  wikidata: Q148
+
+- slug: stati-uniti
+  type: location
+  display_name: Stati Uniti
+  aliases: ["USA", "U.S.A.", "America", "United States"]
+  wikidata: Q30
+
+- slug: russia
+  type: location
+  display_name: Russia
+  aliases: ["Federazione Russa"]
+  wikidata: Q159
+
+- slug: ucraina
+  type: location
+  display_name: Ucraina
+  aliases: []
+  wikidata: Q212
+
+- slug: israele
+  type: location
+  display_name: Israele
+  aliases: []
+  wikidata: Q801
+
+- slug: palestina
+  type: location
+  display_name: Palestina
+  aliases: ["Stato di Palestina"]
+  wikidata: Q219060
+
+- slug: iran
+  type: location
+  display_name: Iran
+  aliases: ["Repubblica Islamica dell'Iran"]
+  wikidata: Q794
+
+- slug: regno-unito
+  type: location
+  display_name: Regno Unito
+  aliases: ["UK", "Inghilterra", "Gran Bretagna"]
+  wikidata: Q145
+
+- slug: francia
+  type: location
+  display_name: Francia
+  aliases: []
+  wikidata: Q142
+
+- slug: germania
+  type: location
+  display_name: Germania
+  aliases: []
+  wikidata: Q183
+
+- slug: spagna
+  type: location
+  display_name: Spagna
+  aliases: []
+  wikidata: Q29
+
+- slug: giappone
+  type: location
+  display_name: Giappone
+  aliases: ["Japan"]
+  wikidata: Q17
+
+# ============================================================
+# SUBJECT — tecnologie display / sigle all-caps
+# ============================================================
+- slug: oled
+  type: subject
+  display_name: OLED
+  aliases: ["AMOLED", "QD-OLED"]
+  wikidata: Q425334
+
+- slug: led
+  type: subject
+  display_name: LED
+  aliases: []
+  wikidata: Q25504
+
+- slug: microled
+  type: subject
+  display_name: MicroLED
+  aliases: ["Micro-LED", "micro LED"]
+  wikidata: Q15783393
+
+- slug: mini-led
+  type: subject
+  display_name: Mini-LED
+  aliases: ["miniLED"]
+
+- slug: lcd
+  type: subject
+  display_name: LCD
+  aliases: []
+  wikidata: Q105414
+
+- slug: 4k
+  type: subject
+  display_name: 4K
+  aliases: ["UHD", "Ultra HD"]
+  wikidata: Q1228168
+
+- slug: 8k
+  type: subject
+  display_name: 8K
+  aliases: ["8K UHD"]
+  wikidata: Q3027944
+
+# ============================================================
+# SUBJECT — sport automobilistici / motorsport
+# ============================================================
+- slug: formula-1
+  type: subject
+  display_name: Formula 1
+  aliases: ["F1", "Formula1", "Formula One"]
+  wikidata: Q1968
+
+- slug: formula-2
+  type: subject
+  display_name: Formula 2
+  aliases: ["F2", "Formula2", "FIA Formula 2"]
+  wikidata: Q15815741
+
+- slug: formula-3
+  type: subject
+  display_name: Formula 3
+  aliases: ["F3", "Formula3", "FIA Formula 3"]
+  wikidata: Q24953562
+
+- slug: f1-academy
+  type: subject
+  display_name: F1 Academy
+  aliases: []
+  wikidata: Q117231521
+
+- slug: motogp
+  type: subject
+  display_name: MotoGP
+  aliases: ["Moto GP", "Motomondiale"]
+  wikidata: Q197582
+
+- slug: superbike
+  type: subject
+  display_name: Superbike
+  aliases: ["WorldSBK", "WSBK"]
+  wikidata: Q15974450
+
+- slug: rally
+  type: subject
+  display_name: Rally
+  aliases: ["WRC", "World Rally Championship"]
+  wikidata: Q12089
+
+- slug: pixel
+  type: brand
+  display_name: Pixel
+  aliases: ["Google Pixel", "Pixel Phone"]
+  wikidata: Q19842225
+
+- slug: iqoo
+  type: brand
+  display_name: iQOO
+  aliases: ["iQoo"]
+  wikidata: Q63064566
+
+- slug: vivo
+  type: brand
+  display_name: Vivo
+  aliases: ["vivo Mobile"]
+  wikidata: Q3520125
+
+# ============================================================
+# BRAND — aerospazio / elon musk galaxy
+# ============================================================
+- slug: spacex
+  type: brand
+  display_name: SpaceX
+  aliases: ["Space X", "Space Exploration Technologies"]
+  wikidata: Q193276
+
+- slug: starship
+  type: brand
+  display_name: Starship
+  aliases: ["SpaceX Starship"]
+  wikidata: Q14620538
+
+- slug: starlink
+  type: brand
+  display_name: Starlink
+  aliases: []
+  wikidata: Q56383005
+
+- slug: nasa
+  type: brand
+  display_name: NASA
+  aliases: ["National Aeronautics and Space Administration"]
+  wikidata: Q23548
+
+- slug: esa
+  type: brand
+  display_name: ESA
+  aliases: ["Agenzia Spaziale Europea", "European Space Agency"]
+  wikidata: Q42262
+
+# ============================================================
+# BRAND — utility / energia / infrastrutture IT
+# ============================================================
+- slug: terna
+  type: brand
+  display_name: Terna
+  aliases: ["Terna SpA"]
+  wikidata: Q1455184
+
+- slug: snam
+  type: brand
+  display_name: Snam
+  aliases: ["Snam SpA"]
+  wikidata: Q1138795
+
+- slug: a2a
+  type: brand
+  display_name: A2A
+  aliases: ["A2A SpA"]
+  wikidata: Q3601741
+
+- slug: hera
+  type: brand
+  display_name: Hera
+  aliases: ["Gruppo Hera"]
+  wikidata: Q3884870
+
+- slug: leonardo
+  type: brand
+  display_name: Leonardo
+  aliases: ["Leonardo SpA", "Finmeccanica"]
+  wikidata: Q910379
+
+- slug: pirelli
+  type: brand
+  display_name: Pirelli
+  aliases: ["Pirelli & C", "Pirelli SpA"]
+  wikidata: Q651755
+
+- slug: saipem
+  type: brand
+  display_name: Saipem
+  aliases: []
+  wikidata: Q905099
+
+# ============================================================
+# SUBJECT — categorie merceologiche tech
+# ============================================================
+- slug: monitor
+  type: subject
+  display_name: Monitor
+  aliases: ["monitor", "schermo per pc"]
+
+- slug: smartphone
+  type: subject
+  display_name: Smartphone
+  aliases: ["smartphone", "smartphones", "telefono cellulare"]
+
+- slug: notebook
+  type: subject
+  display_name: Notebook
+  aliases: ["notebook", "notebooks", "portatile", "laptop"]
+
+- slug: laptop
+  type: subject
+  display_name: Laptop
+  aliases: ["laptop", "laptops"]
+
+- slug: tablet
+  type: subject
+  display_name: Tablet
+  aliases: ["tablet", "tablets", "tavoletta"]
+
+- slug: smartwatch
+  type: subject
+  display_name: Smartwatch
+  aliases: ["smartwatch", "smartwatches", "orologio smart"]
+
+- slug: cuffie
+  type: subject
+  display_name: Cuffie
+  aliases: ["cuffie", "cuffie wireless", "cuffie bluetooth"]
+
+- slug: auricolari
+  type: subject
+  display_name: Auricolari
+  aliases: ["auricolari", "earbuds", "tws"]
+
+- slug: console
+  type: subject
+  display_name: Console
+  aliases: ["console", "console videogiochi"]
+
+- slug: webcam
+  type: subject
+  display_name: Webcam
+  aliases: ["webcam"]
+
+- slug: stampante
+  type: subject
+  display_name: Stampante
+  aliases: ["stampante", "stampanti"]
+
+- slug: router
+  type: subject
+  display_name: Router
+  aliases: ["router", "router wifi"]
+
+- slug: ssd
+  type: subject
+  display_name: SSD
+  aliases: ["ssd", "unità ssd"]
+
+- slug: hard-disk
+  type: subject
+  display_name: Hard Disk
+  aliases: ["hard disk", "hdd", "harddisk"]
+
+- slug: aspirapolvere
+  type: subject
+  display_name: Aspirapolvere
+  aliases: ["aspirapolvere", "robot aspirapolvere"]
+
+- slug: smart-tv
+  type: subject
+  display_name: Smart TV
+  aliases: ["smart tv", "televisore smart", "tv 4k", "tv oled"]
+
+# ============================================================
+# SUBJECT — concept ricorrenti aggiuntivi (low-case friendly)
+# ============================================================
+- slug: criptovalute
+  type: subject
+  display_name: Criptovalute
+  aliases: ["criptovalute", "criptovaluta", "crypto", "cryptocurrencies"]
+  wikidata: Q13479982
+
+- slug: bitcoin
+  type: subject
+  display_name: Bitcoin
+  aliases: ["bitcoin", "BTC"]
+  wikidata: Q131723
+
+- slug: blockchain
+  type: subject
+  display_name: Blockchain
+  aliases: ["blockchain"]
+  wikidata: Q20514253
+
+- slug: nft
+  type: subject
+  display_name: NFT
+  aliases: ["nft", "non-fungible token"]
+  wikidata: Q70439198
+
+- slug: cybersicurezza
+  type: subject
+  display_name: Cybersicurezza
+  aliases: ["cybersicurezza", "cybersecurity", "sicurezza informatica"]
+  wikidata: Q3510521
+
+- slug: chatgpt
+  type: brand
+  display_name: ChatGPT
+  aliases: ["chatgpt", "Chat GPT"]
+  wikidata: Q115564437
+
+- slug: copilot
+  type: brand
+  display_name: Copilot
+  aliases: ["copilot", "Microsoft Copilot", "GitHub Copilot"]
+  wikidata: Q121243907
+
+- slug: gemini
+  type: brand
+  display_name: Gemini
+  aliases: ["gemini", "Bard"]
+  wikidata: Q124163050
+
+# Composite: quando in un articolo matchano sia `google` sia `gemini`,
+# le componenti vengono collassate in questo singolo topic via
+# `_COMPOSITE_RULES` in classify.py (T-015).
+- slug: google-gemini
+  type: brand
+  display_name: Google Gemini
+  aliases: ["Google Gemini"]
+  wikidata: Q124163050
+
+- slug: claude
+  type: brand
+  display_name: Claude
+  aliases: ["claude", "Claude AI"]
+  wikidata: Q121383951
+
+- slug: transizione-energetica
+  type: subject
+  display_name: Transizione energetica
+  aliases: ["transizione energetica", "decarbonizzazione"]
+
+- slug: manovra
+  type: subject
+  display_name: Manovra
+  aliases: ["legge di bilancio", "manovra finanziaria", "manovra di bilancio"]
+
+# ============================================================
+# TODO — espandere a 500-1000 entries:
 # - Calciatori top Serie A + nazionali
 # - Conduttori TV (Fazio, Vespa, De Filippi, ecc.)
 # - Cantanti italiani (Mengoni, Annalisa, Mahmood, ecc.)
 # - Brand moda IT (Armani, Versace, Bulgari, Tod's, Valentino, ...)
 # - Brand alimentari (Lavazza, Illy, Ferrero, Nutella, Plasmon, ...)
 # - Industria/business (Pirelli, Leonardo, Saipem, ENAV, ...)
-# - Media (Mediaset, Rai, Sky, Discovery, La7, ...)
-# - Tematiche ricorrenti (transizione energetica, manovra, NATO, BCE, ...)
 # - Personaggi politica internazionale (Sunak, Starmer, Trudeau, Modi, Xi Jinping, ...)

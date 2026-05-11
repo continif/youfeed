@@ -27,7 +27,12 @@ if _ENV_FILE.exists():
         _k, _, _v = _line.partition("=")
         if " #" in _v:
             _v = _v.split(" #", 1)[0]
-        os.environ.setdefault(_k.strip(), _v.strip())
+        _v = _v.strip()
+        # Strippa virgolette esterne stile python-dotenv: "valore" o 'valore'.
+        # Necessario per password con caratteri speciali (es. ADMIN_PASSWORD="..").
+        if len(_v) >= 2 and _v[0] == _v[-1] and _v[0] in ('"', "'"):
+            _v = _v[1:-1]
+        os.environ.setdefault(_k.strip(), _v)
 
 
 class Settings(BaseSettings):
@@ -106,6 +111,10 @@ class Settings(BaseSettings):
 
     # ---- LLM (v1.2) ----
     anthropic_api_key: str = ""
+
+    # ---- Admin panel (HTTP Basic via .env, plaintext in v1) ----
+    admin_username: str = ""
+    admin_password: str = ""
 
     @property
     def is_production(self) -> bool:

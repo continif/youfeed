@@ -1,11 +1,28 @@
 """Esporta tutti i modelli per Alembic autogenerate e per le query."""
 
 from .activity import ActivityLog
+from .alerts import Alert, AlertMatch
 from .articles import Article
 from .base import Base, TimestampMixin
-from .knowledge import ArticleEntity, ArticleTopic, Entity, Topic
+from .notifications import Notification
+from .push import PushSubscription
+from .knowledge import (
+    ArticleEntity,
+    ArticleTopic,
+    Entity,
+    EntitySourceCount,
+    Topic,
+    TopicCompositeRule,
+    TopicTermRule,
+)
 from .sources import Category, FeaturedSource, Source, UserSource
-from .users import AuthSession, EmailVerificationToken, ReservedUsername, User
+from .users import (
+    AuthSession,
+    EmailVerificationToken,
+    PasswordResetToken,
+    ReservedUsername,
+    User,
+)
 
 __all__ = [
     "Base",
@@ -13,6 +30,7 @@ __all__ = [
     "User",
     "AuthSession",
     "EmailVerificationToken",
+    "PasswordResetToken",
     "ReservedUsername",
     "Source",
     "UserSource",
@@ -23,5 +41,12 @@ __all__ = [
     "Entity",
     "ArticleTopic",
     "ArticleEntity",
+    "EntitySourceCount",
+    "TopicTermRule",
+    "TopicCompositeRule",
     "ActivityLog",
+    "Notification",
+    "Alert",
+    "AlertMatch",
+    "PushSubscription",
 ]

@@ -15,6 +15,7 @@ from app.exceptions import ConflictError, NotFoundError, UnauthorizedError
 from app.models import (
     AuthSession,
     EmailVerificationToken,
+    PasswordResetToken,
     ReservedUsername,
     User,
 )
@@ -300,3 +301,89 @@ async def change_password(
     validate_password(new)
     user.password_hash = hash_password(new)
     await session.flush()
+
+
+# ---------------------------------------------------------------------------
+# Forgot / reset password (Phase 1.1.B)
+# ---------------------------------------------------------------------------
+
+
+PASSWORD_RESET_TTL = timedelta(hours=1)
+
+
+async def issue_password_reset_token(
+    session: AsyncSession, email: str
+) -> tuple[User, str] | None:
+    """Crea un token reset per l'utente identificato da `email`.
+
+    Ritorna None se l'utente non esiste (così il caller può rispondere in modo
+    indistinguibile dal caso "ok" — antiscan). Invalida i token pendenti
+    eliminandoli prima di emettere il nuovo.
+    """
+    norm = email.strip().lower()
+    res = await session.execute(select(User).where(User.email == norm))
+    user = res.scalar_one_or_none()
+    if user is None:
+        return None
+
+    # Account OAuth-only (password_hash NULL): non emettiamo reset, l'utente
+    # deve passare dal flow Google. Anche qui il caller risponde uguale.
+    if user.password_hash is None:
+        return None
+
+    await session.execute(
+        PasswordResetToken.__table__.delete().where(PasswordResetToken.user_id == user.id)
+    )
+    token = url_safe_token(32)
+    session.add(
+        PasswordResetToken(
+            token=token,
+            user_id=user.id,
+            expires_at=datetime.now(UTC) + PASSWORD_RESET_TTL,
+        )
+    )
+    await session.flush()
+    return user, token
+
+
+async def consume_password_reset_token(
+    session: AsyncSession, *, token: str, new_password: str
+) -> User:
+    """Valida un token reset, applica la nuova password, marca il token usato.
+
+    Solleva UnauthorizedError per token mancante/scaduto/usato, ValidationError
+    per password debole.
+    """
+    res = await session.execute(
+        select(PasswordResetToken).where(PasswordResetToken.token == token)
+    )
+    record = res.scalar_one_or_none()
+    if record is None:
+        raise UnauthorizedError("Token non valido.", code="invalid_token")
+    if record.used_at is not None:
+        raise UnauthorizedError("Token già utilizzato.", code="token_used")
+
+    now = datetime.now(UTC)
+    expires_at = record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if expires_at < now:
+        raise UnauthorizedError("Token scaduto.", code="expired_token")
+
+    validate_password(new_password)
+
+    user = await session.get(User, record.user_id)
+    if user is None:
+        raise NotFoundError("Utente non trovato.", code="user_not_found")
+
+    user.password_hash = hash_password(new_password)
+    record.used_at = now
+    # Revoca tutte le sessioni attive: change-password forza re-login altrove.
+    await session.execute(
+        AuthSession.__table__.update()
+        .where(AuthSession.user_id == user.id)
+        .where(AuthSession.revoked_at.is_(None))
+        .values(revoked_at=now)
+    )
+    await session.flush()
+    return user

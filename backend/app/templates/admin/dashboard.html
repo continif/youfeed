@@ -1,0 +1,30 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="ya-counts">
+    <div class="ya-count-card"><div class="n">{{ counts.users }}</div><div class="label">Utenti</div></div>
+    <div class="ya-count-card"><div class="n">{{ counts.articles }}</div><div class="label">Articoli</div></div>
+    <div class="ya-count-card"><div class="n">{{ counts.sources }}</div><div class="label">Sources</div></div>
+    <div class="ya-count-card"><div class="n">{{ counts.topics }}</div><div class="label">Topic totali</div></div>
+    <div class="ya-count-card"><div class="n">{{ counts.topics_curated }}</div><div class="label">Topic curated</div></div>
+    <div class="ya-count-card"><div class="n">{{ counts.topics_non_curated }}</div><div class="label">Topic non-curated</div></div>
+    <div class="ya-count-card"><div class="n">{{ counts.article_topics }}</div><div class="label">Associazioni articolo↔topic</div></div>
+</div>
+
+<div class="ya-card" style="margin-top: 24px;">
+    <h2>Quick links</h2>
+    <ul>
+        <li><a href="/yf_admin/users">Gestione utenti</a></li>
+        <li><a href="/yf_admin/topics">Gestione topic (curated + auto-extracted)</a></li>
+        <li><a href="/yf_admin/stats">Statistiche</a></li>
+        <li>Regole estrazione:
+            <a href="/yf_admin/rules/ambigui">Ambigui</a> ·
+            <a href="/yf_admin/rules/blacklist">Blacklist</a> ·
+            <a href="/yf_admin/rules/case-sensitive">Case-sensitive</a>
+        </li>
+        <li><a href="/yf_admin/composite">Composite rules (sinonimi/associazioni)</a></li>
+    </ul>
+    <p>Per ispezionare un articolo specifico usa il box "ID articolo" nell'header.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+{% block title %}Utenti{% endblock %}
+{% block content %}
+<h1>Utenti ({{ total }})</h1>
+
+<form class="ya-filters" method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Cerca per username o email">
+    <input type="hidden" name="limit" value="{{ limit }}">
+    <button type="submit">Filtra</button>
+    {% if q %}<a href="/yf_admin/users">Reset</a>{% endif %}
+</form>
+
+<table class="ya-table">
+    <thead>
+        <tr>
+            <th>ID</th><th>Username</th><th>Email</th><th>Verified</th>
+            <th>Onboarding</th><th>Creato</th><th>Ultimo accesso</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.id }}</td>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>
+                {% if u.email_verified %}
+                <span class="ya-badge ya-badge-ok">verified</span>
+                {% else %}
+                <span class="ya-badge ya-badge-warn">pending</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if u.onboarding_completed_at %}
+                <span class="ya-badge ya-badge-ok">done</span>
+                {% else %}
+                <span class="ya-badge ya-badge-mute">—</span>
+                {% endif %}
+            </td>
+            <td class="small">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—' }}</td>
+            <td class="small">
+                {% set last = last_logins.get(u.id) %}
+                {{ last.strftime('%Y-%m-%d %H:%M') if last else '—' }}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="small">Nessun utente.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="ya-pager">
+    {% if offset > 0 %}
+    <a href="?q={{ q }}&limit={{ limit }}&offset={{ [0, offset - limit] | max }}">← Prev</a>
+    {% endif %}
+    <span>{{ offset + 1 }}–{{ [offset + limit, total] | min }} di {{ total }}</span>
+    {% if offset + limit < total %}
+    <a href="?q={{ q }}&limit={{ limit }}&offset={{ offset + limit }}">Next →</a>
+    {% endif %}
+</div>
+{% endblock %}

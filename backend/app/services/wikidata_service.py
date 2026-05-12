@@ -30,6 +30,9 @@ a meno che `force=True`; le aliases sono sempre mergeate non distruttivamente.
 
 from __future__ import annotations
 
+import asyncio
+import random
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -48,6 +51,31 @@ WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 USER_AGENT = "YouFeed/1.1 (https://www.youfeed.it; mastro.francesco@gmail.com)"
 TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 DEFAULT_THRESHOLD = 0.7
+
+# Rate limit conservativo verso le API Wikidata: pausa random fra una
+# chiamata e la successiva (qualunque endpoint del modulo). L'obiettivo è
+# rallentare i bulk job per non venire bloccati da Wikipedia/Wikidata —
+# qualità > velocità.
+_RATE_LIMIT_MIN_SEC = 1.0
+_RATE_LIMIT_MAX_SEC = 5.0
+_rate_lock = asyncio.Lock()
+_last_call_at: float = 0.0
+
+
+async def _wikidata_throttle() -> None:
+    """Garantisce un gap random in [_RATE_LIMIT_MIN_SEC, _RATE_LIMIT_MAX_SEC]
+    tra due chiamate consecutive verso `WIKIDATA_API`. Globale al modulo: vale
+    anche se più task lo chiamano in parallelo (acquisizione serializzata via
+    lock). Prima chiamata in assoluto: niente sleep."""
+    global _last_call_at
+    async with _rate_lock:
+        now = time.monotonic()
+        if _last_call_at > 0:
+            target_gap = random.uniform(_RATE_LIMIT_MIN_SEC, _RATE_LIMIT_MAX_SEC)
+            elapsed = now - _last_call_at
+            if elapsed < target_gap:
+                await asyncio.sleep(target_gap - elapsed)
+        _last_call_at = time.monotonic()
 
 
 # P31 "instance of" Q-IDs accettabili per ogni topic.type. La lista è una
@@ -285,6 +313,7 @@ async def _search_entities(
         "limit": str(limit),
         "uselang": language,
     }
+    await _wikidata_throttle()
     try:
         resp = await client.get(WIKIDATA_API, params=params)
         if resp.status_code >= 400:
@@ -308,6 +337,7 @@ async def _get_entities(
         "languages": "it|en",
         "props": "labels|descriptions|aliases|claims|sitelinks/urls",
     }
+    await _wikidata_throttle()
     try:
         resp = await client.get(WIKIDATA_API, params=params)
         if resp.status_code >= 400:
@@ -411,6 +441,7 @@ async def _resolve_qid_labels(
         "languages": "it|en",
         "props": "labels",
     }
+    await _wikidata_throttle()
     try:
         resp = await client.get(WIKIDATA_API, params=params)
         if resp.status_code >= 400:

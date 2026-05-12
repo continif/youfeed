@@ -264,14 +264,15 @@ const contentPreview = computed<{ html: string; truncated: boolean }>(() => {
   if (!text || text.length <= CONTENT_PREVIEW_LIMIT) {
     return { html: a.content_html ?? "", truncated: false };
   }
-  // Primo blocco: tutto il testo fino al primo `\w. ` (parola+punto+spazio)
-  // che incontriamo DOPO i 500 caratteri. Garantisce un'apertura sostanziosa
-  // ma non eccessiva, e taglia su fine-frase pulita.
+  // Primo blocco: tutto il testo fino al primo `\w. ` (parola + punto +
+  // SPAZIO letterale) che incontriamo DOPO i 500 caratteri. Garantisce
+  // un'apertura sostanziosa ma non eccessiva, e taglia su fine-frase pulita.
   const SEEK_FROM = 500;
-  const re = /\w\.\s/g;
+  const re = /\w\. /g;
   re.lastIndex = SEEK_FROM;
   const m = re.exec(text);
-  // m.index = posizione del primo `\w`; il `.` è a m.index+1.
+  // m.index = posizione del `\w`; il `.` è a m.index+1, lo spazio a m.index+2.
+  // Includiamo fino al `.` (escluso lo spazio finale) → cutEnd = m.index + 2.
   const cutEnd = m ? m.index + 2 : Math.min(text.length, SEEK_FROM + 200);
   const first = text.slice(0, cutEnd).trim();
   // Ultimo blocco: ultimo paragrafo (ultima riga non vuota). Se manca, ultima

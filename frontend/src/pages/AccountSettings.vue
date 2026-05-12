@@ -2,6 +2,41 @@
   <div class="max-w-xl">
     <h1 class="text-2xl font-semibold mb-6">Account</h1>
 
+    <!-- Feed RSS personale -->
+    <section
+      v-if="auth.user?.username"
+      class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6"
+    >
+      <h2 class="font-semibold mb-2">Il tuo feed RSS</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+        Sottoscrivi questo URL su qualsiasi lettore RSS (Feedly, NetNewsWire,
+        Thunderbird, …) per ricevere lì il tuo feed personale.
+      </p>
+      <div class="flex items-stretch gap-2">
+        <input
+          ref="rssInput"
+          type="text"
+          readonly
+          :value="rssUrl"
+          class="flex-1 min-w-0 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm font-mono"
+          @focus="onRssFocus"
+        />
+        <button
+          type="button"
+          class="px-3 py-2 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white"
+          @click="onCopyRss"
+        >
+          {{ copied ? "Copiato" : "Copia" }}
+        </button>
+        <a
+          :href="rssUrl"
+          target="_blank"
+          rel="noopener"
+          class="px-3 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+        >Apri</a>
+      </div>
+    </section>
+
     <!-- Change password -->
     <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
       <h2 class="font-semibold mb-3">Cambia password</h2>
@@ -78,7 +113,7 @@
 import { useRouter } from "vue-router";
 import { useForm, useField } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { changePassword, deleteAccount } from "@/services/me";
 import { useAuthStore } from "@/stores/auth";
 import { useToastsStore } from "@/stores/toasts";
@@ -88,6 +123,27 @@ import { changePasswordSchema } from "@/schemas/me";
 const router = useRouter();
 const auth = useAuthStore();
 const toasts = useToastsStore();
+
+// Feed RSS personale
+const rssUrl = computed(() => {
+  const u = auth.user?.username ?? "";
+  return `${window.location.origin}/yf_users/${u}/feed.rss`;
+});
+const copied = ref(false);
+
+function onRssFocus(e: FocusEvent) {
+  (e.target as HTMLInputElement | null)?.select();
+}
+
+async function onCopyRss() {
+  try {
+    await navigator.clipboard.writeText(rssUrl.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1500);
+  } catch {
+    toasts.error("Impossibile copiare. Selezionalo e usa Ctrl+C.");
+  }
+}
 
 const { handleSubmit, isSubmitting, resetForm } = useForm({
   validationSchema: toTypedSchema(changePasswordSchema),

@@ -47,7 +47,7 @@ quelle linkate ereditano un topic esistente; le ignorate spariscono dalla list.<
                 <form method="post" action="/yf_admin/entities/{{ e.id }}/promote" style="display:inline">
                     <input type="hidden" name="return_to" value="/yf_admin/entities?min_count={{ filters.min_count }}&ner_type={{ filters.ner_type }}">
                     <select name="type">
-                        {% for t in ['brand', 'person', 'subject', 'location', 'model'] %}
+                        {% for t in ['brand', 'company', 'organization', 'person', 'subject', 'location', 'model', 'software', 'hardware', 'event', 'work'] %}
                         <option value="{{ t }}">{{ t }}</option>
                         {% endfor %}
                     </select>

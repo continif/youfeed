@@ -274,7 +274,19 @@ async def topics_bulk(
     return RedirectResponse(url=target, status_code=status.HTTP_303_SEE_OTHER)
 
 
-_VALID_TOPIC_TYPES = ("brand", "person", "subject", "location", "model")
+_VALID_TOPIC_TYPES = (
+    "brand",
+    "person",
+    "subject",
+    "location",
+    "model",
+    "company",
+    "organization",
+    "software",
+    "hardware",
+    "event",
+    "work",
+)
 
 
 @router.post("/topics/create")

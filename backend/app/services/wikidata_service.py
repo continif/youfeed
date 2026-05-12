@@ -105,8 +105,129 @@ TYPE_TO_P31_WHITELIST: dict[str, frozenset[str]] = {
         "Q10864048",  # first-level admin region
         "Q56061",     # admin territorial entity
     }),
-    # subject, model e tipi extra non hanno filtro: accettiamo qualsiasi P31
+    "company": frozenset({
+        "Q4830453",   # business
+        "Q6881511",   # enterprise
+        "Q891723",    # public company
+        "Q161726",    # multinational corporation
+        "Q18388277",  # technology company
+        "Q1058914",   # software company
+        "Q786820",    # automobile manufacturer
+        "Q11032",     # newspaper
+        "Q15265344",  # broadcaster
+        "Q1656682",   # company subclass
+        "Q210167",    # video game developer
+        "Q1107656",   # video game publisher
+        "Q2401749",   # società di telecomunicazioni
+        "Q43229",     # organization (subclass also accepted)
+    }),
+    "organization": frozenset({
+        "Q43229",     # organization
+        "Q163740",    # nonprofit organization
+        "Q1664720",   # institute
+        "Q4287745",   # medical organization
+        "Q1985",      # food brand (rare org type)
+        "Q11691",     # stock exchange
+        "Q31920",     # sports club
+        "Q476028",    # association football club
+        "Q1336961",   # sports team
+        "Q484652",    # international organization
+        "Q327333",    # government agency
+        "Q2659904",   # government organization
+        "Q7188",      # government
+    }),
+    "software": frozenset({
+        "Q7397",      # software
+        "Q9143",      # programming language
+        "Q9135",      # operating system
+        "Q341",       # free software
+        "Q1330336",   # mobile app
+        "Q21198",     # computer science
+        "Q1130645",   # web application
+        "Q166142",    # application software
+        "Q251",       # video game
+        "Q11410",     # video game (alt)
+        "Q176165",    # web framework
+        "Q193351",    # web browser
+        "Q1077673",   # software framework
+        "Q40056",     # search engine
+        "Q131212",    # large language model
+    }),
+    "hardware": frozenset({
+        "Q3966",      # computer hardware
+        "Q56155214",  # device
+        "Q22645",     # graphics processing unit
+        "Q5290",      # central processing unit
+        "Q5082128",   # smartphone
+        "Q3962566",   # smartphone (alt)
+        "Q986008",    # tablet computer
+        "Q170978",    # laptop
+        "Q68",        # computer
+        "Q11993",     # mobile phone
+        "Q43084",     # video game console
+    }),
+    "event": frozenset({
+        "Q1656682",   # event
+        "Q1190554",   # occurrence
+        "Q132241",    # festival
+        "Q464980",    # election
+        "Q1187337",   # international event
+        "Q1656682",   # event (dup)
+        "Q15275719",  # recurring event
+        "Q4504495",   # award ceremony
+        "Q40231",     # conference
+        "Q175331",    # demonstration
+        "Q198",       # war
+        "Q3001412",   # political event
+    }),
+    "work": frozenset({
+        "Q386724",    # work (most generic)
+        "Q571",       # book
+        "Q11424",     # film
+        "Q5398426",   # television series
+        "Q15416",     # television program
+        "Q482994",    # album
+        "Q2031291",   # newspaper article
+        "Q838948",    # work of art
+        "Q1004",      # comics
+        "Q47461344",  # written work
+        "Q571",       # book (dup)
+        "Q7725634",   # literary work
+    }),
+    # subject e model non hanno filtro: accettiamo qualsiasi P31
 }
+
+
+# Inferenza inversa: dato un set di P31 Q-id, suggerisci il `type` migliore.
+# L'ordine conta: tipi più specifici prima dei più generici (es. "software"
+# prima di "subject", "company" prima di "organization"/"brand").
+_TYPE_INFERENCE_ORDER: tuple[str, ...] = (
+    "person",
+    "location",
+    "software",
+    "hardware",
+    "event",
+    "work",
+    "company",
+    "organization",
+    "brand",
+)
+
+
+def infer_type_from_p31(p31_qids: set[str]) -> str | None:
+    """Ritorna il type più specifico la cui whitelist matcha almeno un P31,
+    seguendo l'ordine `_TYPE_INFERENCE_ORDER`. None se nessun match.
+
+    Pensato per il tool `refresh_topics` che riassegna il `type` di un topic
+    in base ai claim Wikidata aggiornati.
+    """
+    if not p31_qids:
+        return None
+    for t in _TYPE_INFERENCE_ORDER:
+        wl = TYPE_TO_P31_WHITELIST.get(t)
+        if wl and (p31_qids & wl):
+            return t
+    return None
 
 
 def _extract_p31_qids(entity: dict[str, Any]) -> set[str]:

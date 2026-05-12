@@ -10,7 +10,7 @@
 
     <label for="type">Type</label>
     <select id="type" name="type" required>
-        {% for t in ['brand', 'person', 'subject', 'location', 'model'] %}
+        {% for t in ['brand', 'company', 'organization', 'person', 'subject', 'location', 'model', 'software', 'hardware', 'event', 'work'] %}
         <option value="{{ t }}" {% if t == topic.type %}selected{% endif %}>{{ t }}</option>
         {% endfor %}
     </select>

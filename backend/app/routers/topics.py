@@ -19,6 +19,13 @@ from app.models import Topic
 router = APIRouter(prefix="/yf_topics", tags=["topics"])
 
 
+class QidRef(BaseModel):
+    """Riferimento a un'altra entità Wikidata (Q-id + label umana)."""
+
+    qid: str
+    label: str | None = None
+
+
 class TopicDetailOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -27,9 +34,26 @@ class TopicDetailOut(BaseModel):
     display_name: str
     type: str
     description: str | None = None
-    # URL Wikipedia (it preferred, fallback en) derivato da external_refs
-    # popolato dall'enrichment Wikidata.
+    # Campi derivati da topics.external_refs (popolato dall'enrichment
+    # Wikidata, Phase 1.2.B).
     wikipedia_url: str | None = None
+    wikidata_qid: str | None = None
+    instance_of: list[QidRef] = []
+    country: list[QidRef] = []
+    owned_by: list[QidRef] = []
+    official_url: str | None = None
+
+
+def _qid_refs(raw: object) -> list[QidRef]:
+    """Adatta `external_refs.X` (list[dict]) a list[QidRef]. Tollera shape
+    legacy (manca `label`) o valori vuoti."""
+    if not isinstance(raw, list):
+        return []
+    out: list[QidRef] = []
+    for item in raw:
+        if isinstance(item, dict) and item.get("qid"):
+            out.append(QidRef(qid=str(item["qid"]), label=item.get("label")))
+    return out
 
 
 @router.get("/{topic_id}", response_model=TopicDetailOut)
@@ -46,4 +70,9 @@ async def get_topic(db: DB, topic_id: int = Path(ge=1)) -> TopicDetailOut:
         type=topic.type,
         description=topic.description,
         wikipedia_url=wp_url,
+        wikidata_qid=refs.get("wikidata_qid"),
+        instance_of=_qid_refs(refs.get("instance_of")),
+        country=_qid_refs(refs.get("country")),
+        owned_by=_qid_refs(refs.get("owned_by")),
+        official_url=refs.get("official_url"),
     )

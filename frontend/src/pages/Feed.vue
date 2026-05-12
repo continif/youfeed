@@ -29,26 +29,63 @@
         >
       </div>
 
-      <!-- Wikipedia box: si materializza se il topic ha description Wikidata -->
+      <!-- Box info topic — si materializza se il topic ha enrichment Wikidata -->
       <aside
-        v-if="topicDetail && (topicDetail.description || topicDetail.wikipedia_url)"
+        v-if="hasTopicInfo"
         class="mt-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60"
       >
         <p
-          v-if="topicDetail.description"
+          v-if="topicDetail?.description"
           class="text-sm text-slate-700 dark:text-slate-300 leading-snug"
         >
           {{ topicDetail.description }}
         </p>
-        <a
-          v-if="topicDetail.wikipedia_url"
-          :href="topicDetail.wikipedia_url"
-          target="_blank"
-          rel="noopener"
-          class="mt-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+
+        <!-- Metadata Wikidata (instance_of, country, owned_by) -->
+        <dl
+          v-if="hasTopicMeta"
+          class="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs"
         >
-          Leggi su Wikipedia ↗
-        </a>
+          <template v-if="topicDetail?.instance_of?.length">
+            <dt class="text-slate-500 dark:text-slate-400">È un</dt>
+            <dd class="text-slate-700 dark:text-slate-300">
+              {{ topicDetail.instance_of.map(qidLabel).join(", ") }}
+            </dd>
+          </template>
+          <template v-if="topicDetail?.country?.length">
+            <dt class="text-slate-500 dark:text-slate-400">Paese</dt>
+            <dd class="text-slate-700 dark:text-slate-300">
+              {{ topicDetail.country.map(qidLabel).join(", ") }}
+            </dd>
+          </template>
+          <template v-if="topicDetail?.owned_by?.length">
+            <dt class="text-slate-500 dark:text-slate-400">Posseduta da</dt>
+            <dd class="text-slate-700 dark:text-slate-300">
+              {{ topicDetail.owned_by.map(qidLabel).join(", ") }}
+            </dd>
+          </template>
+        </dl>
+
+        <div class="mt-3 flex flex-wrap gap-3 text-sm">
+          <a
+            v-if="topicDetail?.wikipedia_url"
+            :href="topicDetail.wikipedia_url"
+            target="_blank"
+            rel="noopener"
+            class="text-blue-600 hover:underline"
+          >
+            Wikipedia ↗
+          </a>
+          <a
+            v-if="topicDetail?.official_url"
+            :href="topicDetail.official_url"
+            target="_blank"
+            rel="noopener"
+            class="text-blue-600 hover:underline"
+          >
+            Sito ufficiale ↗
+          </a>
+        </div>
       </aside>
     </header>
 
@@ -78,7 +115,7 @@ import { RouterLink, useRoute } from "vue-router";
 import TimelineFeed from "@/components/articles/TimelineFeed.vue";
 import { fetchFeed } from "@/services/articles";
 import { fetchCategoryTree, flattenTree } from "@/services/categories";
-import { fetchTopic, type TopicDetailOut } from "@/services/topics";
+import { fetchTopic, type QidRef, type TopicDetailOut } from "@/services/topics";
 import type { CategoryNode } from "@/types/api";
 
 const route = useRoute();
@@ -109,8 +146,31 @@ const activeTopicId = computed<number | null>(() => {
 // È euristica ma sufficiente per la header (no fetch dedicato).
 const activeTopicLabel = ref<string | null>(null);
 
-// Dettaglio topic (description + wikipedia_url) caricato quando attivo
+// Dettaglio topic (description + metadata Wikidata) caricato quando attivo
 const topicDetail = ref<TopicDetailOut | null>(null);
+
+const hasTopicMeta = computed<boolean>(() => {
+  const t = topicDetail.value;
+  return !!(
+    t &&
+    (t.instance_of.length || t.country.length || t.owned_by.length)
+  );
+});
+
+const hasTopicInfo = computed<boolean>(() => {
+  const t = topicDetail.value;
+  if (!t) return false;
+  return !!(
+    t.description ||
+    t.wikipedia_url ||
+    t.official_url ||
+    hasTopicMeta.value
+  );
+});
+
+function qidLabel(x: QidRef): string {
+  return x.label || x.qid;
+}
 
 async function loadTopicDetail(id: number | null) {
   if (!id) {

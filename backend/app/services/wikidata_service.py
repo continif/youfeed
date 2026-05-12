@@ -251,6 +251,64 @@ def _score_hit(term_norm: str, hit: dict[str, Any]) -> tuple[float, str] | None:
     return None
 
 
+def _claim_qids(claims: dict[str, Any], prop: str) -> list[str]:
+    """Estrai i Q-id puntati da `prop` (es. P31, P17, P127). I claim Wikidata
+    multi-valore sono comuni (più istanze, più proprietari, ecc.): mantengo
+    tutti i valori, preservando l'ordine."""
+    out: list[str] = []
+    for c in claims.get(prop) or []:
+        snak = c.get("mainsnak") or {}
+        dv = (snak.get("datavalue") or {}).get("value") or {}
+        qid = dv.get("id") if isinstance(dv, dict) else None
+        if isinstance(qid, str) and qid.startswith("Q") and qid not in out:
+            out.append(qid)
+    return out
+
+
+def _claim_url(claims: dict[str, Any], prop: str) -> str | None:
+    """Estrai una URL string (P856 = sito ufficiale). Prende il primo valore."""
+    for c in claims.get(prop) or []:
+        snak = c.get("mainsnak") or {}
+        dv = (snak.get("datavalue") or {}).get("value")
+        if isinstance(dv, str) and dv:
+            return dv
+    return None
+
+
+async def _resolve_qid_labels(
+    client: httpx.AsyncClient, qids: list[str]
+) -> dict[str, str]:
+    """Risolve una lista di Q-id a label umani (it preferred, fallback en)
+    via una singola chiamata `wbgetentities props=labels`. Niente label se
+    Wikidata non ce l'ha nelle due lingue."""
+    if not qids:
+        return {}
+    params = {
+        "action": "wbgetentities",
+        "ids": "|".join(qids),
+        "format": "json",
+        "languages": "it|en",
+        "props": "labels",
+    }
+    try:
+        resp = await client.get(WIKIDATA_API, params=params)
+        if resp.status_code >= 400:
+            return {}
+        ents = (resp.json() or {}).get("entities") or {}
+    except httpx.HTTPError as e:
+        log.debug("yf.wikidata.labels_failed", error=str(e))
+        return {}
+    out: dict[str, str] = {}
+    for qid, ent in ents.items():
+        labels = ent.get("labels") or {}
+        for lang in ("it", "en"):
+            v = (labels.get(lang) or {}).get("value")
+            if v:
+                out[qid] = str(v)
+                break
+    return out
+
+
 def _build_external_refs(entity: dict[str, Any], match: WikidataMatch) -> dict[str, Any]:
     refs: dict[str, Any] = {
         "wikidata_qid": match.qid,
@@ -267,8 +325,8 @@ def _build_external_refs(entity: dict[str, Any], match: WikidataMatch) -> dict[s
     if en_wp:
         refs["wikipedia_url_en"] = en_wp
 
-    # P18 (image)
     claims = entity.get("claims") or {}
+    # P18 (image)
     p18 = (claims.get("P18") or [{}])[0] if claims.get("P18") else None
     if p18:
         mainsnak = p18.get("mainsnak") or {}
@@ -279,6 +337,24 @@ def _build_external_refs(entity: dict[str, Any], match: WikidataMatch) -> dict[s
                 + datavalue.replace(" ", "_")
                 + "?width=512"
             )
+
+    # Claim Q-id estratti GREZZI. Le label umane vengono risolte in
+    # enrich_topic() con _resolve_qid_labels() e mergeate qui dopo.
+    p31 = _claim_qids(claims, "P31")
+    p17 = _claim_qids(claims, "P17")
+    p127 = _claim_qids(claims, "P127")
+    if p31:
+        refs["instance_of"] = [{"qid": q, "label": None} for q in p31]
+    if p17:
+        refs["country"] = [{"qid": q, "label": None} for q in p17]
+    if p127:
+        refs["owned_by"] = [{"qid": q, "label": None} for q in p127]
+
+    # P856 (official website)
+    official = _claim_url(claims, "P856")
+    if official:
+        refs["official_url"] = official
+
     return refs
 
 
@@ -418,6 +494,21 @@ async def enrich_topic(
         description = _extract_description(entity)
         new_aliases = _extract_aliases(entity)
         refs = _build_external_refs(entity, best)
+
+        # 4b. Risolvi le label dei Q-id linkati (P31/P17/P127) in batch unico
+        linked_qids: list[str] = []
+        for key in ("instance_of", "country", "owned_by"):
+            for item in refs.get(key) or []:
+                qid = item.get("qid")
+                if qid and qid not in linked_qids:
+                    linked_qids.append(qid)
+        if linked_qids:
+            labels = await _resolve_qid_labels(client, linked_qids)
+            for key in ("instance_of", "country", "owned_by"):
+                for item in refs.get(key) or []:
+                    lbl = labels.get(item.get("qid"))
+                    if lbl:
+                        item["label"] = lbl
 
         if description and (force or not topic.description):
             topic.description = description

@@ -36,6 +36,7 @@ from app.routers import (
     search,
     seo,
     sources,
+    topics,
     track,
 )
 
@@ -88,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(sources.public_router)
     app.include_router(discovery.router)
     app.include_router(articles.router)
+    app.include_router(topics.router)  # /yf_topics/{id} (info box su filtro topic)
     app.include_router(search.router)  # /yf_search + /yf_search/suggest
     app.include_router(push.public_router)  # /yf_push/vapid-key
     app.include_router(push.me_router)      # /yf_me/push/* (Phase 1.2.E)

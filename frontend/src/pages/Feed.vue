@@ -28,6 +28,28 @@
           >×</RouterLink
         >
       </div>
+
+      <!-- Wikipedia box: si materializza se il topic ha description Wikidata -->
+      <aside
+        v-if="topicDetail && (topicDetail.description || topicDetail.wikipedia_url)"
+        class="mt-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60"
+      >
+        <p
+          v-if="topicDetail.description"
+          class="text-sm text-slate-700 dark:text-slate-300 leading-snug"
+        >
+          {{ topicDetail.description }}
+        </p>
+        <a
+          v-if="topicDetail.wikipedia_url"
+          :href="topicDetail.wikipedia_url"
+          target="_blank"
+          rel="noopener"
+          class="mt-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+        >
+          Leggi su Wikipedia ↗
+        </a>
+      </aside>
     </header>
 
     <TimelineFeed ref="timelineRef" :fetcher="fetcher">
@@ -56,6 +78,7 @@ import { RouterLink, useRoute } from "vue-router";
 import TimelineFeed from "@/components/articles/TimelineFeed.vue";
 import { fetchFeed } from "@/services/articles";
 import { fetchCategoryTree, flattenTree } from "@/services/categories";
+import { fetchTopic, type TopicDetailOut } from "@/services/topics";
 import type { CategoryNode } from "@/types/api";
 
 const route = useRoute();
@@ -85,6 +108,21 @@ const activeTopicId = computed<number | null>(() => {
 // Label del topic attivo: derivata dal primo articolo del feed che lo include.
 // È euristica ma sufficiente per la header (no fetch dedicato).
 const activeTopicLabel = ref<string | null>(null);
+
+// Dettaglio topic (description + wikipedia_url) caricato quando attivo
+const topicDetail = ref<TopicDetailOut | null>(null);
+
+async function loadTopicDetail(id: number | null) {
+  if (!id) {
+    topicDetail.value = null;
+    return;
+  }
+  try {
+    topicDetail.value = await fetchTopic(id);
+  } catch {
+    topicDetail.value = null;
+  }
+}
 
 const activeCategoryName = computed<string | null>(() => {
   if (!activeCategoryId.value) return null;
@@ -135,6 +173,10 @@ async function fetcher(cursor?: string) {
 // Reload quando cambia uno dei filtri
 watch([activeCategoryId, activeTopicId], () => {
   activeTopicLabel.value = null;
+  loadTopicDetail(activeTopicId.value);
   timelineRef.value?.reload();
 });
+
+// Carica il dettaglio topic al primo render (se già attivo via deep-link)
+loadTopicDetail(activeTopicId.value);
 </script>

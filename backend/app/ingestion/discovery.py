@@ -136,12 +136,56 @@ def _is_feed_content_type(content_type: str | None) -> bool:
     return primary in FEED_CONTENT_TYPES
 
 
-async def _fetch(client: httpx.AsyncClient, url: str) -> httpx.Response | None:
+_CFFI_FALLBACK_STATUSES = frozenset({403, 503, 520, 521, 522, 523, 524, 525, 526})
+
+
+class _ResponseShim:
+    """Adattatore minimale fra `curl_cffi` Response e l'interfaccia httpx
+    usata in questo modulo (status_code, headers.get, content, text, url).
+    """
+
+    __slots__ = ("status_code", "headers", "content", "text", "url")
+
+    def __init__(self, cr: object) -> None:
+        self.status_code = int(getattr(cr, "status_code", 0))
+        self.headers = dict(getattr(cr, "headers", {}) or {})
+        self.content = getattr(cr, "content", b"")
+        self.text = getattr(cr, "text", "")
+        self.url = getattr(cr, "url", "")
+
+
+async def _fetch_impersonate(url: str) -> "_ResponseShim | None":
+    """Fallback per siti dietro Cloudflare / anti-bot. Usa `curl_cffi` con
+    TLS fingerprint Chrome, l'unica strategia affidabile contro CF challenge.
+    """
     try:
-        return await client.get(url, follow_redirects=True, timeout=10.0)
+        from curl_cffi.requests import AsyncSession  # import lazy
+    except ImportError:
+        log.debug("yf.discovery.cffi_missing")
+        return None
+    try:
+        async with AsyncSession() as s:
+            cr = await s.get(url, impersonate="chrome", timeout=10.0)
+        return _ResponseShim(cr)
+    except Exception as e:  # curl_cffi solleva tipi vari
+        log.debug("yf.discovery.cffi_failed", url=url, error=str(e))
+        return None
+
+
+async def _fetch(client: httpx.AsyncClient, url: str) -> "httpx.Response | _ResponseShim | None":
+    try:
+        r = await client.get(url, follow_redirects=True, timeout=10.0)
     except httpx.HTTPError as e:
         log.debug("yf.discovery.fetch_failed", url=url, error=str(e))
-        return None
+        # Anche `httpx.HTTPError` può nascondere un blocco TLS — riprova cffi
+        return await _fetch_impersonate(url)
+    if r.status_code in _CFFI_FALLBACK_STATUSES:
+        # Probabile challenge anti-bot: prova con TLS fingerprint browser-like
+        alt = await _fetch_impersonate(url)
+        if alt is not None and alt.status_code == 200:
+            log.info("yf.discovery.cffi_bypass", url=url, original_status=r.status_code)
+            return alt
+    return r
 
 
 # ---------------------------------------------------------------------------

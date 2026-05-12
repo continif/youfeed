@@ -99,24 +99,10 @@
           </p>
 
           <div
-            v-if="contentPreview.expanded && article.content_html"
-            class="prose prose-slate dark:prose-invert max-w-none"
-            v-html="article.content_html"
-          />
-          <div
-            v-else-if="contentPreview.html"
+            v-if="contentPreview.html"
             class="prose prose-slate dark:prose-invert max-w-none"
             v-html="contentPreview.html"
           />
-
-          <button
-            v-if="contentPreview.truncated"
-            type="button"
-            class="mt-3 text-sm text-blue-600 hover:underline"
-            @click="contentExpanded = !contentExpanded"
-          >
-            {{ contentExpanded ? "Riduci" : "Mostra tutto" }}
-          </button>
 
           <a
             :href="article.url_canonical"
@@ -213,7 +199,6 @@ const loading = ref(true);
 const relatedLoading = ref(false);
 const error = ref<string | null>(null);
 const imageFailed = ref(false);
-const contentExpanded = ref(false);
 
 const CONTENT_PREVIEW_LIMIT = 1000;
 
@@ -268,34 +253,40 @@ function htmlToText(html: string): string {
   return (tmp.textContent || "").replace(/\r\n?/g, "\n");
 }
 
-const contentPreview = computed<{
-  html: string;
-  truncated: boolean;
-  expanded: boolean;
-}>(() => {
+const contentPreview = computed<{ html: string; truncated: boolean }>(() => {
   const a = article.value;
-  if (!a) return { html: "", truncated: false, expanded: false };
-  // content_text può essere null/vuoto: in quel caso derivo dal content_html
-  // preservando i salti di paragrafo.
-  let text = (a.content_text ?? "").trim();
-  if (!text && a.content_html) text = htmlToText(a.content_html).trim();
+  if (!a) return { html: "", truncated: false };
+  // Preferiamo derivare il testo dal content_html (preserva i confini di
+  // paragrafo via </p>/<br>/</div>). content_text è fallback.
+  let text = "";
+  if (a.content_html) text = htmlToText(a.content_html).trim();
+  if (!text) text = (a.content_text ?? "").trim();
   if (!text || text.length <= CONTENT_PREVIEW_LIMIT) {
-    return { html: a.content_html ?? "", truncated: false, expanded: true };
+    return { html: a.content_html ?? "", truncated: false };
   }
-  // Primo paragrafo = testo fino al primo `.\n` (incluso il punto).
-  const firstMatch = text.match(/^([\s\S]*?\.)\s*\n/);
-  const first = (firstMatch ? firstMatch[1] : text.split(/\n/)[0]).trim();
-  // Ultimo paragrafo = ultima riga non vuota.
+  // Primo blocco: tutto il testo fino al primo `\w. ` (parola+punto+spazio)
+  // che incontriamo DOPO i 500 caratteri. Garantisce un'apertura sostanziosa
+  // ma non eccessiva, e taglia su fine-frase pulita.
+  const SEEK_FROM = 500;
+  const re = /\w\.\s/g;
+  re.lastIndex = SEEK_FROM;
+  const m = re.exec(text);
+  // m.index = posizione del primo `\w`; il `.` è a m.index+1.
+  const cutEnd = m ? m.index + 2 : Math.min(text.length, SEEK_FROM + 200);
+  const first = text.slice(0, cutEnd).trim();
+  // Ultimo blocco: ultimo paragrafo (ultima riga non vuota). Se manca, ultima
+  // frase chiusa con un punto.
   const lines = text.split(/\n+/).map((l: string) => l.trim()).filter(Boolean);
-  const last = lines.length ? lines[lines.length - 1] : "";
-  if (!first || !last || first === last) {
-    return { html: a.content_html ?? "", truncated: false, expanded: true };
+  let last = lines.length ? lines[lines.length - 1] : "";
+  if (!last) {
+    const idx = text.lastIndexOf(". ");
+    if (idx > 0) last = text.slice(idx + 2).trim();
   }
   const html =
     `<p>${escapeHtml(first)}</p>` +
     `<p class="text-slate-400 text-center select-none my-3">[…]</p>` +
-    `<p>${escapeHtml(last)}</p>`;
-  return { html, truncated: true, expanded: contentExpanded.value };
+    (last && last !== first ? `<p>${escapeHtml(last)}</p>` : "");
+  return { html, truncated: true };
 });
 
 const cleanDescription = computed(() => {

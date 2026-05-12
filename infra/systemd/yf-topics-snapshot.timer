@@ -1,0 +1,14 @@
+[Unit]
+Description=YOUFEED — nightly topics Parquet backup at 03:00 UTC
+
+[Timer]
+# 03:00 UTC — dopo la prima passata di reclassify-topics (04:00) sarebbe
+# meglio, ma il file Parquet è già "last-known-good" per le manuali admin
+# fatte fino al momento del run. Spostare a 04:30 se l'utente vuole che il
+# backup rifletta sempre l'effetto del reclassify del mattino.
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+Unit=yf-topics-snapshot.service
+
+[Install]
+WantedBy=timers.target

@@ -9,6 +9,9 @@ Da copiare in `/etc/systemd/system/` sul server di produzione.
 | `yf-api.service` | API FastAPI + Uvicorn (4 worker) |
 | `yf-worker@.service` | template parametrico, una istanza per coda RQ |
 | `yf-scheduler.service` | scheduler ingestion (tick + dispatch) |
+| `yf-manage-partitions.{service,timer}` | partition maintenance giornaliera (02:30 UTC) |
+| `yf-reclassify-topics.{service,timer}` | reclassify articoli 2x/giorno (04:00 + 16:00 UTC) per riassorbire correzioni admin sui topic |
+| `yf-topics-snapshot.{service,timer}` | backup Parquet topics ogni notte (03:00 UTC) |
 
 ## Code v1.0
 
@@ -33,6 +36,27 @@ sudo systemctl enable --now yf-worker@push.service
 sudo systemctl enable --now yf-worker@alerts_match.service
 sudo systemctl enable --now yf-worker@enrich_wikidata.service
 sudo systemctl enable --now yf-worker@retention_sweep.service
+```
+
+## Timer (job ricorrenti)
+
+```bash
+# Già v1.0: partition maintenance giornaliera
+sudo systemctl enable --now yf-manage-partitions.timer
+
+# Reclassify articoli vs stato corrente dei topic — 04:00 + 16:00 UTC
+sudo systemctl enable --now yf-reclassify-topics.timer
+
+# Backup Parquet dei topic — 03:00 UTC, file unico sovrascritto in
+# /opt/youfeed/data/topics-snapshot.parquet
+sudo systemctl enable --now yf-topics-snapshot.timer
+```
+
+Per ispezionarli:
+```bash
+systemctl list-timers 'yf-*' --no-pager
+journalctl -u yf-reclassify-topics -n 50 --no-pager
+journalctl -u yf-topics-snapshot -n 50 --no-pager
 ```
 
 ## Setup iniziale

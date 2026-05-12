@@ -1,0 +1,29 @@
+[Unit]
+Description=YOUFEED — periodic reclassify articles against current topic state
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=oneshot
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed/backend
+EnvironmentFile=/opt/youfeed/.env
+
+# `--all --title-only`: riapplica la pipeline classify (rules + NER) a tutti
+# gli articoli `indexed`, allineandoli a topic appena promossi/cancellati/
+# aggiunti via admin. `--title-only` è coerente col worker live (T-018):
+# fonte unica del titolo per ridurre falsi positivi.
+ExecStart=/opt/youfeed/.venv/bin/python -m app.utils.reclassify_topics \
+    --all \
+    --title-only
+
+StandardOutput=journal
+StandardError=journal
+
+# Hardening (allineato agli altri unit)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/youfeed /var/log/youfeed
+ProtectHome=false

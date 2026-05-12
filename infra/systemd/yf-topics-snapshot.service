@@ -1,0 +1,28 @@
+[Unit]
+Description=YOUFEED — nightly Parquet snapshot of curated topics
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed/backend
+EnvironmentFile=/opt/youfeed/.env
+
+# Esporta tutti i topic (--include-uncurated → anche quelli auto-classificati
+# da NER/Wikidata, oltre ai curated) in un singolo file Parquet sempre
+# sovrascritto. Pensato come "last-known-good" snapshot per restore rapido.
+ExecStart=/opt/youfeed/.venv/bin/python -m app.utils.topics_snapshot export \
+    --include-uncurated \
+    --out /opt/youfeed/data/topics-snapshot.parquet
+
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+# Serve scrittura anche su /opt/youfeed/data per il file Parquet di output
+ReadWritePaths=/var/lib/youfeed /var/log/youfeed /opt/youfeed/data
+ProtectHome=false

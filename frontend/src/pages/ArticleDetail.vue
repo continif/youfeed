@@ -22,31 +22,53 @@
             : { borderColor: 'rgb(203 213 225 / 1)' }
         "
       >
-        <picture v-if="hasImage">
-          <source
-            v-if="article.image_local_url"
-            media="(max-width: 599px)"
-            :srcset="article.image_local_url.replace('_d.webp', '_m.webp')"
-          />
-          <img
-            :src="article.image_local_url || article.image_url || ''"
-            :alt="article.title"
-            class="w-full h-auto block"
-            @error="imageFailed = true"
-          />
-        </picture>
+        <div v-if="hasImage" class="relative">
+          <picture>
+            <source
+              v-if="article.image_local_url"
+              media="(max-width: 599px)"
+              :srcset="article.image_local_url.replace('_d.webp', '_m.webp')"
+            />
+            <img
+              :src="article.image_local_url || article.image_url || ''"
+              :alt="article.title"
+              class="w-full h-auto block"
+              @error="imageFailed = true"
+            />
+          </picture>
+          <!-- Bookmark toggle: overlay angolo alto-destra, stesso stile della card -->
+          <button
+            type="button"
+            class="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-md text-lg leading-none transition-colors"
+            :class="
+              isBookmarked
+                ? 'bg-blue-600 hover:bg-blue-700 text-white ring-1 ring-white/60'
+                : 'bg-black/70 hover:bg-black/85 text-white'
+            "
+            :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
+            :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
+            :aria-pressed="isBookmarked"
+            @click="onToggleBookmark"
+          >💾</button>
+        </div>
 
         <div class="p-6">
           <h1 class="text-2xl font-semibold leading-tight mb-2 flex items-start gap-3">
             <span class="flex-1">{{ article.title }}</span>
             <button
+              v-if="!hasImage"
               type="button"
-              class="text-2xl leading-none px-1 text-slate-500 hover:text-blue-600 shrink-0"
+              class="w-9 h-9 flex items-center justify-center rounded-md text-base leading-none shrink-0 transition-colors"
+              :class="
+                isBookmarked
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-black/80 hover:bg-black text-white'
+              "
               :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
               :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
               :aria-pressed="isBookmarked"
               @click="onToggleBookmark"
-            >{{ isBookmarked ? "💾" : "🤍" }}</button>
+            >💾</button>
           </h1>
           <div class="flex items-center justify-between text-sm text-slate-500 mb-4">
             <span class="font-medium">{{
@@ -234,6 +256,18 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function htmlToText(html: string): string {
+  // Mantiene i confini di paragrafo prima di togliere i tag: i </p> </div>
+  // </h2…> </li> </br> diventano "\n", così il regex `\.\n` può poi trovare
+  // il primo paragrafo che termina in punto + newline.
+  const withBreaks = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|blockquote|tr)>/gi, "\n");
+  const tmp = document.createElement("div");
+  tmp.innerHTML = withBreaks;
+  return (tmp.textContent || "").replace(/\r\n?/g, "\n");
+}
+
 const contentPreview = computed<{
   html: string;
   truncated: boolean;
@@ -241,19 +275,25 @@ const contentPreview = computed<{
 }>(() => {
   const a = article.value;
   if (!a) return { html: "", truncated: false, expanded: false };
-  const text = (a.content_text ?? "").trim();
+  // content_text può essere null/vuoto: in quel caso derivo dal content_html
+  // preservando i salti di paragrafo.
+  let text = (a.content_text ?? "").trim();
+  if (!text && a.content_html) text = htmlToText(a.content_html).trim();
   if (!text || text.length <= CONTENT_PREVIEW_LIMIT) {
     return { html: a.content_html ?? "", truncated: false, expanded: true };
   }
-  const paragraphs = text.split(/\n\s*\n+/).map((p: string) => p.trim()).filter(Boolean);
-  if (paragraphs.length < 2) {
+  // Primo paragrafo = testo fino al primo `.\n` (incluso il punto).
+  const firstMatch = text.match(/^([\s\S]*?\.)\s*\n/);
+  const first = (firstMatch ? firstMatch[1] : text.split(/\n/)[0]).trim();
+  // Ultimo paragrafo = ultima riga non vuota.
+  const lines = text.split(/\n+/).map((l: string) => l.trim()).filter(Boolean);
+  const last = lines.length ? lines[lines.length - 1] : "";
+  if (!first || !last || first === last) {
     return { html: a.content_html ?? "", truncated: false, expanded: true };
   }
-  const first = paragraphs[0];
-  const last = paragraphs[paragraphs.length - 1];
   const html =
     `<p>${escapeHtml(first)}</p>` +
-    `<p class="text-slate-400 text-center select-none">…</p>` +
+    `<p class="text-slate-400 text-center select-none my-3">[…]</p>` +
     `<p>${escapeHtml(last)}</p>`;
   return { html, truncated: true, expanded: contentExpanded.value };
 });

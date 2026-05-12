@@ -27,15 +27,20 @@
           />
         </picture>
       </RouterLink>
-      <!-- Bookmark toggle: overlay angolo alto-destra -->
+      <!-- Bookmark toggle: overlay angolo alto-destra, sempre floppy 💾 -->
       <button
         type="button"
-        class="absolute right-2 top-2 text-base px-1.5 py-0.5 rounded-full bg-black/55 hover:bg-black/75 text-white"
+        class="absolute right-2 top-2 w-8 h-8 flex items-center justify-center rounded-md text-base leading-none transition-colors"
+        :class="
+          isBookmarked
+            ? 'bg-blue-600 hover:bg-blue-700 text-white ring-1 ring-white/60'
+            : 'bg-black/70 hover:bg-black/85 text-white'
+        "
         :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
         :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
         :aria-pressed="isBookmarked"
         @click.prevent.stop="onToggleBookmark"
-      >{{ isBookmarked ? "💾" : "🤍" }}</button>
+      >💾</button>
       <!-- Ora pubblicazione: sotto immagine, allineata a destra -->
       <time
         :datetime="item.published_at"
@@ -56,12 +61,17 @@
         <button
           v-if="!hasImage"
           type="button"
-          class="text-base leading-none px-1 text-slate-500 hover:text-blue-600"
+          class="w-7 h-7 flex items-center justify-center rounded-md text-sm leading-none shrink-0 transition-colors"
+          :class="
+            isBookmarked
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-black/80 hover:bg-black text-white'
+          "
           :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
           :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
           :aria-pressed="isBookmarked"
           @click.prevent.stop="onToggleBookmark"
-        >{{ isBookmarked ? "💾" : "🤍" }}</button>
+        >💾</button>
       </h2>
       <p
         v-if="cleanDescription"

@@ -33,12 +33,17 @@ import time
 import urllib.parse
 from dataclasses import dataclass
 
+import httpx
+import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.exceptions import AppError
 from app.models import ReservedUsername, User
+
+
+log = structlog.get_logger()
 
 
 # ---------------------------------------------------------------------------
@@ -165,11 +170,82 @@ async def exchange_code(code: str, state: str) -> OAuthProfile:
         sub = "mock-" + hashlib.sha256(email.encode("utf-8")).hexdigest()[:32]
         return OAuthProfile(sub=sub, email=email, name=None)
 
-    raise AppError(
-        "Google OAuth reale non ancora implementato.",
-        code="oauth_not_configured",
-        status_code=501,
-    )
+    return await _google_exchange_code(code)
+
+
+async def _google_exchange_code(code: str) -> OAuthProfile:
+    """Scambia il code OAuth con Google e produce il profilo utente.
+
+    1) POST a `oauth2.googleapis.com/token` con client_id/secret e code →
+       ottiene `access_token` (e `id_token`, che ignoriamo).
+    2) GET su `www.googleapis.com/oauth2/v3/userinfo` con Bearer token →
+       `sub`, `email`, `name`. Lo userinfo endpoint è l'opzione più semplice
+       e auto-verificata da Google (no JWT parsing client-side).
+    """
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            token_res = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": settings.google_oauth_client_id,
+                    "client_secret": settings.google_oauth_client_secret,
+                    "redirect_uri": settings.google_oauth_redirect_uri,
+                    "grant_type": "authorization_code",
+                },
+            )
+            if token_res.status_code != 200:
+                log.warning(
+                    "yf.oauth.google_token_exchange_failed",
+                    status=token_res.status_code,
+                    body=token_res.text[:300],
+                )
+                raise AppError(
+                    "Scambio token Google fallito.",
+                    code="oauth_token_exchange_failed",
+                    status_code=400,
+                )
+            access_token = token_res.json().get("access_token")
+            if not access_token:
+                raise AppError(
+                    "Risposta Google senza access_token.",
+                    code="oauth_token_missing",
+                    status_code=400,
+                )
+
+            userinfo_res = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            if userinfo_res.status_code != 200:
+                log.warning(
+                    "yf.oauth.google_userinfo_failed",
+                    status=userinfo_res.status_code,
+                )
+                raise AppError(
+                    "Impossibile leggere il profilo Google.",
+                    code="oauth_userinfo_failed",
+                    status_code=400,
+                )
+            info = userinfo_res.json()
+    except httpx.HTTPError as e:
+        log.warning("yf.oauth.google_http_error", error=str(e))
+        raise AppError(
+            "Errore di rete verso Google.",
+            code="oauth_network_error",
+            status_code=502,
+        ) from e
+
+    sub = info.get("sub")
+    email = (info.get("email") or "").lower()
+    if not sub or not email:
+        raise AppError(
+            "Profilo Google incompleto (manca sub o email).",
+            code="oauth_profile_incomplete",
+            status_code=400,
+        )
+    return OAuthProfile(sub=sub, email=email, name=info.get("name"))
 
 
 # ---------------------------------------------------------------------------

@@ -142,6 +142,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Alert" },
       },
       {
+        path: "saved",
+        name: "saved",
+        component: () => import("@/pages/Saved.vue"),
+        meta: { title: "Salvati" },
+      },
+      {
         path: "settings",
         name: "settings",
         redirect: { name: "settings-account" },

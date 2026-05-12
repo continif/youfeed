@@ -32,8 +32,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { extractError } from "@/services/api";
+import { useAuthStore } from "@/stores/auth";
+import { useBookmarksStore } from "@/stores/bookmarks";
 import type { ArticleListItem, ArticleListOut } from "@/types/api";
 import ArticleCard from "@/components/articles/ArticleCard.vue";
+
+const auth = useAuthStore();
+const bookmarksStore = useBookmarksStore();
 
 /**
  * `fetcher` riceve un cursor opzionale e ritorna la pagina articoli.
@@ -57,6 +62,9 @@ async function load(cursor?: string) {
     const res = await props.fetcher(cursor);
     items.value = cursor ? [...items.value, ...res.items] : res.items;
     nextCursor.value = res.next_cursor;
+    if (auth.isAuthenticated && res.items.length) {
+      bookmarksStore.hydrate(res.items.map((a: ArticleListItem) => a.id));
+    }
   } catch (err) {
     const apiErr = await extractError(err);
     errorMessage.value = apiErr?.message ?? "Errore nel caricamento del feed.";

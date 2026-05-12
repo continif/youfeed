@@ -37,8 +37,16 @@
         </picture>
 
         <div class="p-6">
-          <h1 class="text-2xl font-semibold leading-tight mb-2">
-            {{ article.title }}
+          <h1 class="text-2xl font-semibold leading-tight mb-2 flex items-start gap-3">
+            <span class="flex-1">{{ article.title }}</span>
+            <button
+              type="button"
+              class="text-2xl leading-none px-1 text-slate-500 hover:text-blue-600 shrink-0"
+              :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
+              :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
+              :aria-pressed="isBookmarked"
+              @click="onToggleBookmark"
+            >{{ isBookmarked ? "💾" : "🤍" }}</button>
           </h1>
           <div class="flex items-center justify-between text-sm text-slate-500 mb-4">
             <span class="font-medium">{{
@@ -69,10 +77,24 @@
           </p>
 
           <div
-            v-if="article.content_html"
+            v-if="contentPreview.expanded && article.content_html"
             class="prose prose-slate dark:prose-invert max-w-none"
             v-html="article.content_html"
           />
+          <div
+            v-else-if="contentPreview.html"
+            class="prose prose-slate dark:prose-invert max-w-none"
+            v-html="contentPreview.html"
+          />
+
+          <button
+            v-if="contentPreview.truncated"
+            type="button"
+            class="mt-3 text-sm text-blue-600 hover:underline"
+            @click="contentExpanded = !contentExpanded"
+          >
+            {{ contentExpanded ? "Riduci" : "Mostra tutto" }}
+          </button>
 
           <a
             :href="article.url_canonical"
@@ -144,6 +166,9 @@ import { RouterLink, useRoute } from "vue-router";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
 import { fetchArticle, fetchRelatedArticles } from "@/services/articles";
+import { useAuthStore } from "@/stores/auth";
+import { useBookmarksStore } from "@/stores/bookmarks";
+import { useToastsStore } from "@/stores/toasts";
 import type {
   ArticleDetailOut,
   RelatedArticlesOut,
@@ -151,6 +176,9 @@ import type {
 } from "@/types/api";
 
 const route = useRoute();
+const auth = useAuthStore();
+const bookmarksStore = useBookmarksStore();
+const toasts = useToastsStore();
 
 const formulas: RelatedFormula[] = ["coverage", "source", "max", "jaccard"];
 const formula = ref<RelatedFormula>("coverage");
@@ -163,6 +191,26 @@ const loading = ref(true);
 const relatedLoading = ref(false);
 const error = ref<string | null>(null);
 const imageFailed = ref(false);
+const contentExpanded = ref(false);
+
+const CONTENT_PREVIEW_LIMIT = 1000;
+
+const isBookmarked = computed(() =>
+  article.value ? bookmarksStore.isBookmarked(article.value.id) : false,
+);
+
+async function onToggleBookmark() {
+  if (!article.value) return;
+  if (!auth.isAuthenticated) {
+    toasts.error("Accedi per salvare gli articoli.");
+    return;
+  }
+  try {
+    await bookmarksStore.toggle(article.value.id);
+  } catch {
+    toasts.error("Impossibile aggiornare il bookmark.");
+  }
+}
 
 const articleId = computed(() => Number(route.params.id));
 
@@ -176,6 +224,39 @@ const hasImage = computed(
     article.value !== null &&
     !!(article.value.image_local_url || article.value.image_url),
 );
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+const contentPreview = computed<{
+  html: string;
+  truncated: boolean;
+  expanded: boolean;
+}>(() => {
+  const a = article.value;
+  if (!a) return { html: "", truncated: false, expanded: false };
+  const text = (a.content_text ?? "").trim();
+  if (!text || text.length <= CONTENT_PREVIEW_LIMIT) {
+    return { html: a.content_html ?? "", truncated: false, expanded: true };
+  }
+  const paragraphs = text.split(/\n\s*\n+/).map((p: string) => p.trim()).filter(Boolean);
+  if (paragraphs.length < 2) {
+    return { html: a.content_html ?? "", truncated: false, expanded: true };
+  }
+  const first = paragraphs[0];
+  const last = paragraphs[paragraphs.length - 1];
+  const html =
+    `<p>${escapeHtml(first)}</p>` +
+    `<p class="text-slate-400 text-center select-none">…</p>` +
+    `<p>${escapeHtml(last)}</p>`;
+  return { html, truncated: true, expanded: contentExpanded.value };
+});
 
 const cleanDescription = computed(() => {
   const raw = article.value?.description ?? "";

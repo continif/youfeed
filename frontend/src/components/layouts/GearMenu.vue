@@ -81,6 +81,7 @@ const dark = ref(false);
 const navLinks = [
   { to: "/me/sources", label: "Fonti" },
   { to: "/me/categories", label: "Categorie" },
+  { to: "/me/saved", label: "💾 Salvati" },
   { to: "/me/alerts", label: "Alert" },
   { to: "/me/settings/account", label: "Impostazioni" },
   { to: "/me/settings/notifications", label: "Notifiche" },

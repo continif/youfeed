@@ -27,11 +27,14 @@ from app.schemas.alerts import (
     AlertTopicOut,
     AlertUpdateIn,
 )
+from app.schemas.bookmarks import BookmarkAddIn, BookmarkIdsOut, BookmarkOut
 from app.schemas.notifications import NotificationCountOut, NotificationOut
 from app.services import (
     account_service,
     alert_service,
+    articles_service,
     auth_service,
+    bookmark_service,
     notification_service,
 )
 
@@ -211,6 +214,28 @@ async def notifications_mark_all_read(
     return NotificationCountOut(unread=0)
 
 
+@router.delete("/notifications/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def notification_delete(
+    user: CurrentUser, db: DB, notification_id: int = Path(ge=1)
+) -> Response:
+    deleted = await notification_service.delete_notification(
+        db, notification_id=notification_id, user_id=int(user.id)
+    )
+    await db.commit()
+    if not deleted:
+        raise NotFoundError("Notifica non trovata.", code="notification_not_found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/notifications/clear-read", response_model=MessageOut)
+async def notifications_clear_read(user: CurrentUser, db: DB) -> MessageOut:
+    """Elimina tutte le notifiche già lette dell'utente."""
+    n = await notification_service.delete_all_read(db, user_id=int(user.id))
+    await db.commit()
+    log.info("yf.notifications.clear_read", user_id=user.id, deleted=n)
+    return MessageOut(message=f"{n} notifiche eliminate.")
+
+
 # ---------------------------------------------------------------------------
 # Alerts (Phase 1.2.D)
 # ---------------------------------------------------------------------------
@@ -296,6 +321,81 @@ async def delete_alert_endpoint(
         raise NotFoundError("Alert non trovato.", code="alert_not_found")
     log.info("yf.me.alert_deleted", user_id=user.id, alert_id=alert_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Bookmark (saved articles)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/bookmarks", response_model=list[BookmarkOut])
+async def list_bookmarks(
+    user: CurrentUser,
+    db: DB,
+    limit: int = Query(default=30, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[BookmarkOut]:
+    rows = await bookmark_service.list_for_user(
+        db, user_id=int(user.id), limit=limit, offset=offset
+    )
+    return [
+        BookmarkOut(
+            article=articles_service.to_list_item(row),  # type: ignore[arg-type]
+            created_at=created_at,
+        )
+        for row, created_at in rows
+    ]
+
+
+@router.post("/bookmarks", response_model=BookmarkOut, status_code=status.HTTP_201_CREATED)
+async def add_bookmark(
+    payload: BookmarkAddIn, user: CurrentUser, db: DB
+) -> BookmarkOut:
+    await bookmark_service.add(
+        db, user_id=int(user.id), article_id=payload.article_id
+    )
+    await db.commit()
+    rows = await bookmark_service.list_for_user(
+        db, user_id=int(user.id), limit=1, offset=0
+    )
+    # Filtra al bookmark appena creato (può non essere il primo se l'utente
+    # ne aveva già di più recenti, ma quello che ci interessa è restituire
+    # la card serializzata dell'articolo target).
+    for row, created_at in rows:
+        if int(row.article.id) == payload.article_id:
+            return BookmarkOut(
+                article=articles_service.to_list_item(row),  # type: ignore[arg-type]
+                created_at=created_at,
+            )
+    raise NotFoundError("Articolo non trovato.", code="article_not_found")
+
+
+@router.delete("/bookmarks/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_bookmark(
+    user: CurrentUser, db: DB, article_id: int = Path(ge=1)
+) -> Response:
+    removed = await bookmark_service.remove(
+        db, user_id=int(user.id), article_id=article_id
+    )
+    await db.commit()
+    if not removed:
+        raise NotFoundError("Bookmark non trovato.", code="bookmark_not_found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/bookmarks/check", response_model=BookmarkIdsOut)
+async def check_bookmarks(
+    payload: dict, user: CurrentUser, db: DB
+) -> BookmarkIdsOut:
+    """Bulk check: dato un set di article_id, ritorna quelli bookmarked."""
+    raw_ids = payload.get("ids") or []
+    if not isinstance(raw_ids, list):
+        raw_ids = []
+    ids = [int(x) for x in raw_ids if isinstance(x, int) or str(x).isdigit()]
+    bookmarked = await bookmark_service.ids_for_user(
+        db, user_id=int(user.id), article_ids=ids
+    )
+    return BookmarkIdsOut(ids=sorted(bookmarked))
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)

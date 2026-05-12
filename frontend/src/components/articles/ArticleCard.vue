@@ -27,6 +27,15 @@
           />
         </picture>
       </RouterLink>
+      <!-- Bookmark toggle: overlay angolo alto-destra -->
+      <button
+        type="button"
+        class="absolute right-2 top-2 text-base px-1.5 py-0.5 rounded-full bg-black/55 hover:bg-black/75 text-white"
+        :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
+        :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
+        :aria-pressed="isBookmarked"
+        @click.prevent.stop="onToggleBookmark"
+      >{{ isBookmarked ? "💾" : "🤍" }}</button>
       <!-- Ora pubblicazione: sotto immagine, allineata a destra -->
       <time
         :datetime="item.published_at"
@@ -38,12 +47,21 @@
     </div>
 
     <div class="p-3">
-      <h2 class="font-semibold text-base leading-snug mb-1">
+      <h2 class="font-semibold text-base leading-snug mb-1 flex items-start gap-2">
         <RouterLink
           :to="`/me/article/${item.id}`"
-          class="hover:text-blue-600 dark:hover:text-blue-400"
+          class="flex-1 hover:text-blue-600 dark:hover:text-blue-400"
           >{{ item.title }}</RouterLink
         >
+        <button
+          v-if="!hasImage"
+          type="button"
+          class="text-base leading-none px-1 text-slate-500 hover:text-blue-600"
+          :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
+          :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
+          :aria-pressed="isBookmarked"
+          @click.prevent.stop="onToggleBookmark"
+        >{{ isBookmarked ? "💾" : "🤍" }}</button>
       </h2>
       <p
         v-if="cleanDescription"
@@ -93,10 +111,30 @@ import { computed, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
+import { useAuthStore } from "@/stores/auth";
+import { useBookmarksStore } from "@/stores/bookmarks";
+import { useToastsStore } from "@/stores/toasts";
 import type { ArticleListItem } from "@/types/api";
 
 const props = defineProps<{ item: ArticleListItem }>();
 const route = useRoute();
+const auth = useAuthStore();
+const bookmarksStore = useBookmarksStore();
+const toasts = useToastsStore();
+
+const isBookmarked = computed(() => bookmarksStore.isBookmarked(props.item.id));
+
+async function onToggleBookmark() {
+  if (!auth.isAuthenticated) {
+    toasts.error("Accedi per salvare gli articoli.");
+    return;
+  }
+  try {
+    await bookmarksStore.toggle(props.item.id);
+  } catch {
+    toasts.error("Impossibile aggiornare il bookmark.");
+  }
+}
 
 const MAX_TOPICS = 12;
 const displayedTopics = computed(() => props.item.topics.slice(0, MAX_TOPICS));

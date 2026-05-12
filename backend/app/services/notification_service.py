@@ -92,6 +92,30 @@ async def mark_all_read(db: AsyncSession, *, user_id: int) -> int:
     return len(res.fetchall())
 
 
+async def delete_notification(
+    db: AsyncSession, *, notification_id: int, user_id: int
+) -> bool:
+    """Elimina una notifica. Ritorna True se esisteva."""
+    res = await db.execute(
+        Notification.__table__.delete()
+        .where(Notification.id == notification_id)
+        .where(Notification.user_id == user_id)
+        .returning(Notification.id)
+    )
+    return res.scalar_one_or_none() is not None
+
+
+async def delete_all_read(db: AsyncSession, *, user_id: int) -> int:
+    """Elimina tutte le notifiche già lette dell'utente. Ritorna count."""
+    res = await db.execute(
+        Notification.__table__.delete()
+        .where(Notification.user_id == user_id)
+        .where(Notification.read_at.is_not(None))
+        .returning(Notification.id)
+    )
+    return len(res.fetchall())
+
+
 async def create_notification(
     db: AsyncSession,
     *,

@@ -1,16 +1,27 @@
 <template>
   <div class="max-w-2xl">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-6 gap-2 flex-wrap">
       <h1 class="text-2xl font-semibold">Notifiche</h1>
-      <button
-        v-if="hasUnread"
-        type="button"
-        class="text-sm text-blue-600 hover:underline"
-        :disabled="markingAll"
-        @click="onMarkAllRead"
-      >
-        {{ markingAll ? "Salvo…" : "Segna tutte come lette" }}
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="hasUnread"
+          type="button"
+          class="text-sm text-blue-600 hover:underline"
+          :disabled="markingAll"
+          @click="onMarkAllRead"
+        >
+          {{ markingAll ? "Salvo…" : "Segna tutte come lette" }}
+        </button>
+        <button
+          v-if="hasRead"
+          type="button"
+          class="text-sm text-red-600 hover:underline"
+          :disabled="clearingRead"
+          @click="onClearRead"
+        >
+          {{ clearingRead ? "Elimino…" : "Elimina lette" }}
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
@@ -48,6 +59,13 @@
               <time :datetime="n.created_at">{{ relTime(n.created_at) }}</time>
             </p>
           </div>
+          <button
+            type="button"
+            class="text-slate-400 hover:text-red-600 font-bold text-lg leading-none px-1"
+            :title="n.read_at ? 'Elimina' : 'Elimina (senza segnare come letta)'"
+            aria-label="Elimina notifica"
+            @click.stop="onDelete(n)"
+          >×</button>
         </div>
       </li>
     </ul>
@@ -64,6 +82,8 @@ import { useRouter } from "vue-router";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
 import {
+  clearRead,
+  deleteNotification,
   listNotifications,
   markAllRead,
   markRead,
@@ -80,8 +100,10 @@ const items = ref<NotificationOut[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const markingAll = ref(false);
+const clearingRead = ref(false);
 
 const hasUnread = computed(() => items.value.some((n) => !n.read_at));
+const hasRead = computed(() => items.value.some((n) => n.read_at));
 
 async function load() {
   loading.value = true;
@@ -123,6 +145,30 @@ async function onMarkAllRead() {
     toasts.error("Impossibile aggiornare le notifiche.");
   } finally {
     markingAll.value = false;
+  }
+}
+
+async function onDelete(n: NotificationOut) {
+  try {
+    await deleteNotification(n.id);
+    items.value = items.value.filter((x) => x.id !== n.id);
+    notifStore.refresh();
+  } catch {
+    toasts.error("Impossibile eliminare la notifica.");
+  }
+}
+
+async function onClearRead() {
+  if (!window.confirm("Eliminare tutte le notifiche già lette?")) return;
+  clearingRead.value = true;
+  try {
+    const res = await clearRead();
+    items.value = items.value.filter((n) => !n.read_at);
+    toasts.success(res.message);
+  } catch {
+    toasts.error("Impossibile eliminare le notifiche.");
+  } finally {
+    clearingRead.value = false;
   }
 }
 

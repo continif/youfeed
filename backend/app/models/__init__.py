@@ -4,6 +4,7 @@ from .activity import ActivityLog
 from .alerts import Alert, AlertMatch, AlertTopic
 from .articles import Article
 from .base import Base, TimestampMixin
+from .bookmarks import ArticleBookmark
 from .notifications import Notification
 from .push import PushSubscription
 from .knowledge import (
@@ -50,4 +51,5 @@ __all__ = [
     "AlertMatch",
     "AlertTopic",
     "PushSubscription",
+    "ArticleBookmark",
 ]

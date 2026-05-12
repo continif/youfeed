@@ -36,3 +36,13 @@ export async function markAllRead(): Promise<NotificationCountOut> {
     .post("yf_me/notifications/mark-all-read")
     .json<NotificationCountOut>();
 }
+
+export async function deleteNotification(id: number): Promise<void> {
+  await api.delete(`yf_me/notifications/${id}`);
+}
+
+export async function clearRead(): Promise<{ message: string }> {
+  return api
+    .post("yf_me/notifications/clear-read")
+    .json<{ message: string }>();
+}

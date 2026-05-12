@@ -155,6 +155,15 @@ export interface VapidKeyOut {
   configured: boolean;
 }
 
+export interface BookmarkOut {
+  article: ArticleListItem;
+  created_at: string;
+}
+
+export interface BookmarkIdsOut {
+  ids: number[];
+}
+
 export interface PushSubscriptionOut {
   id: number;
   endpoint: string;

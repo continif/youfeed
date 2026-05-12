@@ -9,6 +9,25 @@
         salvata solo nel tuo browser (localStorage).
       </p>
 
+      <!-- Preset rapidi: coerenti coi due temi Tailwind -->
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button
+          v-for="p in presets"
+          :key="p.hex"
+          type="button"
+          class="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+          :class="{ 'ring-2 ring-blue-500': color === p.hex }"
+          @click="setColor(p.hex)"
+        >
+          <span
+            class="inline-block w-4 h-4 rounded border border-slate-300 dark:border-slate-600"
+            :style="{ backgroundColor: p.hex }"
+            aria-hidden="true"
+          />
+          {{ p.label }}
+        </button>
+      </div>
+
       <div class="flex items-center gap-3 mb-4">
         <input
           type="color"
@@ -53,6 +72,14 @@ const { color, setColor, reset } = useBackgroundColor();
 const invalid = ref(false);
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+// Preset coerenti con i background di tema Tailwind:
+// - #ffffff = bg-white (tema chiaro)
+// - #0f172a = bg-slate-900 (tema scuro, default index.html dark)
+const presets = [
+  { hex: "#ffffff", label: "Sfondo chiaro" },
+  { hex: "#0f172a", label: "Sfondo scuro" },
+];
 
 function onPick(e: Event) {
   const v = (e.target as HTMLInputElement).value;

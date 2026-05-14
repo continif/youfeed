@@ -98,6 +98,10 @@ def _to_row(event: dict[str, Any]) -> dict[str, Any]:
         except (ValueError, TypeError):
             session_uuid = None
 
+    # NB: il modello ActivityLog usa l'attributo Python `metadata_` perché
+    # `metadata` è riservato su DeclarativeBase (= lo schema MetaData object).
+    # Passando "metadata" qui, SQLAlchemy lo risolve contro Base.metadata e
+    # crasha con "'MetaData' object has no attribute '_bulk_update_tuples'".
     return {
         "user_id": event.get("user_id"),
         "session_id": session_uuid,
@@ -107,7 +111,7 @@ def _to_row(event: dict[str, Any]) -> dict[str, Any]:
         "method": (event.get("method") or "")[:8] or None,
         "target_type": event.get("target_type"),
         "target_id": event.get("target_id"),
-        "metadata": event.get("metadata"),
+        "metadata_": event.get("metadata"),
         "ip": event.get("ip"),
         "country": (event.get("country") or "")[:8] or None,
         "asn": event.get("asn"),

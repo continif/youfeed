@@ -47,6 +47,7 @@ yarn-error.log*
 data/maxmind/*.mmdb
 data/images/
 data/manticore/
+data/countries_cache.json
 maxmind/
 temp/
 *.db

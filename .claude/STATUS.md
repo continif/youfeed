@@ -716,6 +716,12 @@ Tutti i punti "Da definire" rimasti nei singoli doc sono di portata limitata e s
 
 ---
 
+# MINORI — task piccoli, no urgenza, da rosicchiare quando capita
+
+- [ ] **Dedup articoli cross-URL**: oggi `articles.url_hash = sha256(url)` deduplica solo per URL esatto. Stessa notizia che arriva con UTM tag, mirror, o URL non-canonical-resolved passa come articolo distinto. Possibili approcci: (a) strip query params di tracking prima dell'hash, (b) content-hash sul body normalizzato, (c) seguire `<link rel=canonical>` lato ingestion. Scelta dipende da quanto rumore vediamo sui dati reali.
+
+---
+
 # Come usare questo file
 
 1. Quando inizi una phase: marca `[~]` accanto al titolo della phase + data start

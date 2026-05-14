@@ -597,12 +597,15 @@ Cinque fasi, organizzate per parallellizzabilità. Il task fa
 - [ ] Telemetria: ogni target emette `share` con `metadata.to`
 - [ ] Test manuale su mobile (verifica intent URL aprano l'app nativa)
 
-**1.F · Consent + privacy**
-- [ ] Tutti gli emit di tracking gated su `useTrackingConsent.consent === 'granted'`
-- [ ] Bottoni share funzionano ANCHE senza consent (è azione esplicita),
-      ma l'evento `share` viene loggato solo con consent
-- [ ] In `PrivacySettings.vue`: nuova toggle "Feed personalizzato" — se
-      off, il backend salta la rollup per quell'utente (`users.personalize=false`)
+**1.F · Consent gating (privacy)**
+- [x] Tutti gli emit di tracking gated su `useTrackingConsent.consent === 'granted'`
+      (early-return dentro `trackEvent()` in `lib/tracking.ts`)
+- [x] Bottoni share funzionano ANCHE senza consent (sono azione esplicita
+      dell'utente: l'intent URL apre comunque); il tracking event `share`
+      viene loggato solo con consent (gated dallo stesso `trackEvent()`)
+- [ ] Toggle "Feed personalizzato" in `PrivacySettings.vue` → spostato a
+      Phase 2.A insieme alla migration `users.personalize` (la rollup
+      che dovrebbe disabilitare non esiste ancora)
 
 **1.G · Verifica raccolta dati**
 - [ ] Dopo deploy, controlla in `activity_log` che gli eventi nuovi
@@ -612,10 +615,13 @@ Cinque fasi, organizzate per parallellizzabilità. Il task fa
 
 ### Phase 2 — Affinity rollup (settimana 3, dipende da dati Phase 1)
 
-**2.A · Schema**
+**2.A · Schema + opt-out**
 - [ ] Migration 0021: tabelle `user_topic_affinity` + `user_source_affinity`
       (vedi pseudocodice sopra)
 - [ ] Migration aggiunge anche colonna `users.personalize BOOLEAN DEFAULT TRUE`
+- [ ] Endpoint `PATCH /yf_me/preferences` per `users.personalize`
+- [ ] In `PrivacySettings.vue`: toggle "Feed personalizzato"
+      (spostata qui da 1.F)
 
 **2.B · Helper per half-life**
 - [ ] PL/pgSQL function `half_life_seconds(topic_type TEXT)` che

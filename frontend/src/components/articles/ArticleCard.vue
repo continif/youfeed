@@ -1,5 +1,6 @@
 <template>
   <article
+    ref="rootEl"
     class="break-inside-avoid mb-4 bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm transition-shadow duration-150 hover:shadow-2xl hover:shadow-black/40 dark:hover:shadow-white/30"
     :class="{
       'border-2': true,
@@ -9,7 +10,7 @@
     :data-article-id="item.id"
   >
     <div v-if="hasImage" class="relative">
-      <RouterLink :to="`/me/article/${item.id}`" class="block">
+      <RouterLink :to="`/me/article/${item.id}`" class="block" @click="onPreviewOpen">
         <picture>
           <source
             v-if="item.image_local_url"
@@ -41,6 +42,13 @@
         :aria-pressed="isBookmarked"
         @click.prevent.stop="onToggleBookmark"
       >💾</button>
+      <!-- Share button: overlay angolo basso-sinistra dell'immagine -->
+      <ShareButton
+        class="absolute left-2 bottom-2"
+        :article-id="item.id"
+        :title="item.title"
+        :url="item.url_canonical"
+      />
       <!-- Ora pubblicazione: sotto immagine, allineata a destra -->
       <time
         :datetime="item.published_at"
@@ -117,13 +125,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
 import { useAuthStore } from "@/stores/auth";
 import { useBookmarksStore } from "@/stores/bookmarks";
 import { useToastsStore } from "@/stores/toasts";
+import { trackEvent } from "@/lib/tracking";
+import ShareButton from "@/components/articles/ShareButton.vue";
 import type { ArticleListItem } from "@/types/api";
 
 const props = defineProps<{ item: ArticleListItem }>();
@@ -140,11 +150,58 @@ async function onToggleBookmark() {
     return;
   }
   try {
-    await bookmarksStore.toggle(props.item.id);
+    const nowBookmarked = await bookmarksStore.toggle(props.item.id);
+    if (nowBookmarked) {
+      trackEvent("bookmark", { type: "article", id: props.item.id });
+    }
   } catch {
     toasts.error("Impossibile aggiornare il bookmark.");
   }
 }
+
+function onPreviewOpen() {
+  trackEvent("preview_open", { type: "article", id: props.item.id });
+}
+
+// IntersectionObserver: emette `impression` quando la card è visibile per
+// almeno 500ms continuativi nella viewport (vedi tracking.ts che dedupa
+// gli impression duplicati per articolo per session).
+const rootEl = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+let visibleTimer: ReturnType<typeof setTimeout> | null = null;
+const IMPRESSION_DWELL_MS = 500;
+
+onMounted(() => {
+  if (typeof IntersectionObserver === "undefined" || !rootEl.value) return;
+  observer = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+        if (visibleTimer) return;
+        visibleTimer = setTimeout(() => {
+          trackEvent("impression", { type: "article", id: props.item.id });
+        }, IMPRESSION_DWELL_MS);
+      } else if (visibleTimer) {
+        clearTimeout(visibleTimer);
+        visibleTimer = null;
+      }
+    },
+    { threshold: [0, 0.5, 1] },
+  );
+  observer.observe(rootEl.value);
+});
+
+onBeforeUnmount(() => {
+  if (visibleTimer) {
+    clearTimeout(visibleTimer);
+    visibleTimer = null;
+  }
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+});
 
 const MAX_TOPICS = 12;
 const displayedTopics = computed(() => props.item.topics.slice(0, MAX_TOPICS));

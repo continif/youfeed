@@ -50,6 +50,13 @@
             :aria-pressed="isBookmarked"
             @click="onToggleBookmark"
           >💾</button>
+          <!-- Share button: overlay angolo basso-sinistra, simmetrico al bookmark -->
+          <ShareButton
+            class="absolute left-3 bottom-3"
+            :article-id="article.id"
+            :title="article.title"
+            :url="article.url_canonical"
+          />
         </div>
 
         <div class="p-6">
@@ -109,6 +116,7 @@
             target="_blank"
             rel="noopener"
             class="inline-block mt-6 px-4 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+            @click="onOriginalOpen"
           >
             Apri articolo originale ↗
           </a>
@@ -154,6 +162,7 @@
                   ? { borderColor: r.category_color, borderWidth: '2px' }
                   : {}
               "
+              @click="onRelatedClick(r)"
             >
               <div class="text-xs text-slate-500 mb-1 flex justify-between">
                 <span>{{ r.source.title }}</span>
@@ -169,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
@@ -177,8 +186,11 @@ import { fetchArticle, fetchRelatedArticles } from "@/services/articles";
 import { useAuthStore } from "@/stores/auth";
 import { useBookmarksStore } from "@/stores/bookmarks";
 import { useToastsStore } from "@/stores/toasts";
+import { trackEvent } from "@/lib/tracking";
+import ShareButton from "@/components/articles/ShareButton.vue";
 import type {
   ArticleDetailOut,
+  RelatedArticleItem,
   RelatedArticlesOut,
   RelatedFormula,
 } from "@/types/api";
@@ -213,10 +225,101 @@ async function onToggleBookmark() {
     return;
   }
   try {
-    await bookmarksStore.toggle(article.value.id);
+    const nowBookmarked = await bookmarksStore.toggle(article.value.id);
+    if (nowBookmarked) {
+      trackEvent("bookmark", { type: "article", id: article.value.id });
+    }
   } catch {
     toasts.error("Impossibile aggiornare il bookmark.");
   }
+}
+
+function onOriginalOpen() {
+  if (!article.value) return;
+  // Sparato PRIMA che la nuova tab venga aperta — keepalive nel fetch
+  // garantisce la consegna anche durante la navigation.
+  trackEvent("original_open", { type: "article", id: article.value.id });
+}
+
+function onRelatedClick(target: RelatedArticleItem) {
+  if (!article.value) return;
+  // Calcolo client-side dell'intersezione topic A∩B: il backend ha
+  // entrambi i payload e li può usare in rollup per il bonus +2.5/topic.
+  const fromIds = new Set(article.value.topics.map((t) => t.id));
+  const shared: number[] = [];
+  for (const t of target.topics) {
+    if (fromIds.has(t.id)) shared.push(t.id);
+  }
+  trackEvent(
+    "related_click",
+    { type: "article", id: target.id },
+    {
+      from_article: article.value.id,
+      shared_topics: shared,
+    },
+  );
+}
+
+// Dwell timers: scaglioni cumulativi (5/15/60s di visibilità) sulla
+// detail page. Non riarmati al cambio articolo dentro la stessa SPA
+// session: ogni `articleId` ricomincia da zero.
+let dwellTimer5: ReturnType<typeof setTimeout> | null = null;
+let dwellTimer15: ReturnType<typeof setTimeout> | null = null;
+let dwellTimer60: ReturnType<typeof setTimeout> | null = null;
+let dwellStartedAt: number | null = null;
+let dwellAccumulatedMs = 0;
+const dwellFired = { d5: false, d15: false, d60: false };
+
+function scheduleDwell(remainingMs: number) {
+  const fireIn = (target: number) => Math.max(0, target - dwellAccumulatedMs);
+  if (!dwellFired.d5) {
+    dwellTimer5 = setTimeout(() => {
+      if (article.value) trackEvent("dwell_5s", { type: "article", id: article.value.id });
+      dwellFired.d5 = true;
+    }, Math.min(remainingMs, fireIn(5_000)));
+  }
+  if (!dwellFired.d15) {
+    dwellTimer15 = setTimeout(() => {
+      if (article.value) trackEvent("dwell_15s", { type: "article", id: article.value.id });
+      dwellFired.d15 = true;
+    }, Math.min(remainingMs, fireIn(15_000)));
+  }
+  if (!dwellFired.d60) {
+    dwellTimer60 = setTimeout(() => {
+      if (article.value) trackEvent("dwell_60s", { type: "article", id: article.value.id });
+      dwellFired.d60 = true;
+    }, Math.min(remainingMs, fireIn(60_000)));
+  }
+}
+
+function pauseDwell() {
+  if (dwellStartedAt !== null) {
+    dwellAccumulatedMs += performance.now() - dwellStartedAt;
+    dwellStartedAt = null;
+  }
+  if (dwellTimer5) { clearTimeout(dwellTimer5); dwellTimer5 = null; }
+  if (dwellTimer15) { clearTimeout(dwellTimer15); dwellTimer15 = null; }
+  if (dwellTimer60) { clearTimeout(dwellTimer60); dwellTimer60 = null; }
+}
+
+function resumeDwell() {
+  if (dwellStartedAt !== null) return; // già in corso
+  dwellStartedAt = performance.now();
+  // Re-schedule SOLO i timer non ancora firati.
+  scheduleDwell(60_000 - dwellAccumulatedMs);
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === "visible") resumeDwell();
+  else pauseDwell();
+}
+
+function resetDwell() {
+  pauseDwell();
+  dwellAccumulatedMs = 0;
+  dwellFired.d5 = false;
+  dwellFired.d15 = false;
+  dwellFired.d60 = false;
 }
 
 const articleId = computed(() => Number(route.params.id));
@@ -324,9 +427,14 @@ async function loadArticle() {
   loading.value = true;
   error.value = null;
   imageFailed.value = false;
+  // Reset dwell prima di ogni nuovo articolo (la SPA naviga senza unmount
+  // della view se cambia solo route.params.id).
+  resetDwell();
   try {
     article.value = await fetchArticle(articleId.value);
     await loadRelated();
+    // Start dwell timer solo dopo che l'articolo è caricato e visibile.
+    if (document.visibilityState === "visible") resumeDwell();
   } catch (e) {
     error.value = String((e as Error).message ?? e);
   } finally {
@@ -366,7 +474,13 @@ watch(
     document.title = t ? `${t} · YouFeed` : DEFAULT_TITLE;
   },
 );
+
+onMounted(() => {
+  document.addEventListener("visibilitychange", onVisibilityChange);
+});
 onUnmounted(() => {
   document.title = DEFAULT_TITLE;
+  pauseDwell();
+  document.removeEventListener("visibilitychange", onVisibilityChange);
 });
 </script>

@@ -36,27 +36,28 @@
               @error="imageFailed = true"
             />
           </picture>
-          <!-- Bookmark toggle: overlay angolo alto-destra, stesso stile della card -->
-          <button
-            type="button"
-            class="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-md text-lg leading-none transition-colors"
-            :class="
-              isBookmarked
-                ? 'bg-blue-600 hover:bg-blue-700 text-white ring-1 ring-white/60'
-                : 'bg-black/70 hover:bg-black/85 text-white'
-            "
-            :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
-            :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
-            :aria-pressed="isBookmarked"
-            @click="onToggleBookmark"
-          >💾</button>
-          <!-- Share button: overlay angolo basso-sinistra, simmetrico al bookmark -->
-          <ShareButton
-            class="absolute left-3 bottom-3"
-            :article-id="article.id"
-            :title="article.title"
-            :url="article.url_canonical"
-          />
+          <!-- Bookmark + Share: stack verticale overlay alto-destra -->
+          <div class="absolute right-3 top-3 flex flex-col gap-2">
+            <button
+              type="button"
+              class="w-10 h-10 flex items-center justify-center rounded-md text-lg leading-none transition-colors"
+              :class="
+                isBookmarked
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white ring-1 ring-white/60'
+                  : 'bg-black/70 hover:bg-black/85 text-white'
+              "
+              :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
+              :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva articolo'"
+              :aria-pressed="isBookmarked"
+              @click="onToggleBookmark"
+            >💾</button>
+            <ShareButton
+              :article-id="article.id"
+              :title="article.title"
+              :url="article.url_canonical"
+              popover-direction="down"
+            />
+          </div>
         </div>
 
         <div class="p-6">

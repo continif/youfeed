@@ -32,7 +32,12 @@
     <div
       v-if="open"
       ref="menuEl"
-      class="absolute z-30 left-0 bottom-full mb-2 min-w-[180px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg py-1 text-sm"
+      class="absolute z-30 min-w-[180px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg py-1 text-sm"
+      :class="
+        props.popoverDirection === 'down'
+          ? 'right-0 top-full mt-2'
+          : 'left-0 bottom-full mb-2'
+      "
       role="menu"
     >
       <a
@@ -78,11 +83,17 @@ import { computed, onBeforeUnmount, ref } from "vue";
 import { trackEvent } from "@/lib/tracking";
 import { useToastsStore } from "@/stores/toasts";
 
-const props = defineProps<{
-  articleId: number;
-  title: string;
-  url: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    articleId: number;
+    title: string;
+    url: string;
+    /** Direzione di apertura del popover. 'down' (default) per buttons in
+     *  alto, 'up' per buttons in basso. */
+    popoverDirection?: "up" | "down";
+  }>(),
+  { popoverDirection: "down" },
+);
 
 const toasts = useToastsStore();
 const open = ref(false);

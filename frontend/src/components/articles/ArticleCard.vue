@@ -28,27 +28,28 @@
           />
         </picture>
       </RouterLink>
-      <!-- Bookmark toggle: overlay angolo alto-destra, sempre floppy 💾 -->
-      <button
-        type="button"
-        class="absolute right-2 top-2 w-8 h-8 flex items-center justify-center rounded-md text-base leading-none transition-colors"
-        :class="
-          isBookmarked
-            ? 'bg-blue-600 hover:bg-blue-700 text-white ring-1 ring-white/60'
-            : 'bg-black/70 hover:bg-black/85 text-white'
-        "
-        :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
-        :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
-        :aria-pressed="isBookmarked"
-        @click.prevent.stop="onToggleBookmark"
-      >💾</button>
-      <!-- Share button: overlay angolo basso-sinistra dell'immagine -->
-      <ShareButton
-        class="absolute left-2 bottom-2"
-        :article-id="item.id"
-        :title="item.title"
-        :url="item.url_canonical"
-      />
+      <!-- Bookmark + Share: stack verticale overlay alto-destra -->
+      <div class="absolute right-2 top-2 flex flex-col gap-1.5">
+        <button
+          type="button"
+          class="w-8 h-8 flex items-center justify-center rounded-md text-base leading-none transition-colors"
+          :class="
+            isBookmarked
+              ? 'bg-blue-600 hover:bg-blue-700 text-white ring-1 ring-white/60'
+              : 'bg-black/70 hover:bg-black/85 text-white'
+          "
+          :title="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
+          :aria-label="isBookmarked ? 'Rimuovi dai salvati' : 'Salva'"
+          :aria-pressed="isBookmarked"
+          @click.prevent.stop="onToggleBookmark"
+        >💾</button>
+        <ShareButton
+          :article-id="item.id"
+          :title="item.title"
+          :url="item.url_canonical"
+          popover-direction="down"
+        />
+      </div>
       <!-- Ora pubblicazione: sotto immagine, allineata a destra -->
       <time
         :datetime="item.published_at"

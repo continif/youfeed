@@ -1,26 +1,26 @@
 """Generazione sitemap.xml e robots.txt.
 
-La sitemap include:
-  - `/` (home)
-  - tutti i profili pubblici `/{username}` (utenti con almeno una categoria
-    pubblica)
+La sitemap pubblicata è statica (6 entry curate) — NON include i profili
+pubblici degli utenti: troppi falsi positivi per Google (account inattivi,
+profili senza contenuto, churn). I profili restano comunque indicizzabili
+dai motori se linkati dall'esterno.
 
-`lastmod` per profilo = max(`articles.published_at`) tra le user_sources
-dell'utente che vivono in una categoria pubblica. Se l'utente non ha articoli
-ancora indicizzati, fallback a `users.created_at`.
+Entry:
+  /                  home, changefreq=hourly, lastmod=max(published_at)
+  /register          changefreq=monthly
+  /bot               changefreq=monthly
+  /chi-siamo         changefreq=yearly
+  /come-funziona     changefreq=yearly
+  /disclaimer        changefreq=yearly
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Iterable
 from xml.sax.saxutils import escape
-
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models import Article, Category, User, UserSource
 
 
 @dataclass
@@ -31,56 +31,63 @@ class SitemapEntry:
     priority: float = 0.5
 
 
-async def collect_public_profile_entries(
-    session: AsyncSession, *, base_url: str
+# I template Jinja delle info page vivono accanto a `templates/public/`.
+# Usiamo l'mtime come `lastmod`: cambia ogni volta che riscriviamo la copy.
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates" / "public"
+
+
+def _template_lastmod(template_name: str, fallback: datetime) -> datetime:
+    p = _TEMPLATES_DIR / template_name
+    try:
+        return datetime.fromtimestamp(p.stat().st_mtime, tz=UTC)
+    except OSError:
+        return fallback
+
+
+def build_static_entries(
+    *, base_url: str, home_lastmod: datetime
 ) -> list[SitemapEntry]:
-    """Ritorna entry sitemap per tutti gli utenti che hanno almeno una
-    categoria pubblica con almeno una sorgente associata."""
+    """Le 6 URL pubbliche che vogliamo nella sitemap."""
     base = base_url.rstrip("/")
-
-    # Subquery: tutti gli user_id distinti che hanno categorie pubbliche+sources
-    public_users_q = (
-        select(User.id, User.username, User.created_at)
-        .join(Category, Category.user_id == User.id)
-        .join(UserSource, UserSource.user_id == User.id)
-        .where(Category.is_public.is_(True))
-        .where(UserSource.category_id == Category.id)
-        .group_by(User.id, User.username, User.created_at)
-    )
-    users = (await session.execute(public_users_q)).all()
-    if not users:
-        return []
-
-    # Per ogni user, prendi max(published_at) sui suoi articoli (sources sue)
-    user_ids = [u[0] for u in users]
-    last_mod_q = (
-        select(UserSource.user_id, func.max(Article.published_at))
-        .join(Article, Article.source_id == UserSource.source_id)
-        .join(Category, Category.id == UserSource.category_id)
-        .where(UserSource.user_id.in_(user_ids))
-        .where(Category.is_public.is_(True))
-        .where(Article.processing_status == "indexed")
-        .group_by(UserSource.user_id)
-    )
-    last_mod_rows = (await session.execute(last_mod_q)).all()
-    last_mod_by_user: dict[int, datetime] = {
-        int(uid): ts for uid, ts in last_mod_rows if ts is not None
-    }
-
-    out: list[SitemapEntry] = []
-    for user_id, username, created_at in users:
-        lm = last_mod_by_user.get(int(user_id)) or created_at or datetime.now(UTC)
-        if lm.tzinfo is None:
-            lm = lm.replace(tzinfo=UTC)
-        out.append(
-            SitemapEntry(
-                loc=f"{base}/{username}",
-                lastmod=lm,
-                changefreq="hourly",
-                priority=0.8,
-            )
-        )
-    return out
+    now = datetime.now(UTC)
+    return [
+        SitemapEntry(
+            loc=base + "/",
+            lastmod=home_lastmod,
+            changefreq="hourly",
+            priority=1.0,
+        ),
+        SitemapEntry(
+            loc=base + "/register",
+            lastmod=now,
+            changefreq="monthly",
+            priority=0.7,
+        ),
+        SitemapEntry(
+            loc=base + "/bot",
+            lastmod=_template_lastmod("bot.html", now),
+            changefreq="monthly",
+            priority=0.4,
+        ),
+        SitemapEntry(
+            loc=base + "/chi-siamo",
+            lastmod=_template_lastmod("chi-siamo.html", now),
+            changefreq="yearly",
+            priority=0.6,
+        ),
+        SitemapEntry(
+            loc=base + "/come-funziona",
+            lastmod=_template_lastmod("come-funziona.html", now),
+            changefreq="yearly",
+            priority=0.6,
+        ),
+        SitemapEntry(
+            loc=base + "/disclaimer",
+            lastmod=_template_lastmod("disclaimer.html", now),
+            changefreq="yearly",
+            priority=0.3,
+        ),
+    ]
 
 
 def build_sitemap_xml(entries: Iterable[SitemapEntry]) -> str:
@@ -107,15 +114,18 @@ def build_robots_txt(*, base_url: str, allow_indexing: bool = True) -> str:
         # Staging: blocca tutto
         return "User-agent: *\nDisallow: /\n"
 
+    # NB: /register è ora indicizzabile (compare in sitemap), gli altri
+    # flussi auth restano disallow per non disperdere crawl budget.
     return (
         "User-agent: *\n"
         "Allow: /\n"
         "Disallow: /yf_\n"
         "Disallow: /me/\n"
         "Disallow: /login\n"
-        "Disallow: /register\n"
         "Disallow: /verify-email\n"
         "Disallow: /verify-email-pending\n"
+        "Disallow: /forgot-password\n"
+        "Disallow: /reset-password\n"
         "Disallow: /static/\n"
         f"\nSitemap: {base}/sitemap.xml\n"
     )

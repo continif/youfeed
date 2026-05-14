@@ -1,6 +1,12 @@
-"""Endpoint SEO: sitemap.xml + robots.txt + /bot (pagina identificazione crawler).
+"""Endpoint SEO: sitemap.xml + robots.txt + pagine informative pubbliche.
 
-Niente `/yf_` prefix qui: i crawler cercano percorsi standard.
+Niente `/yf_` prefix qui: i crawler cercano percorsi standard. Le pagine
+servite via Jinja2 (no SPA) sono quelle che ci interessa far indicizzare
+e che non hanno bisogno della reattività di Vue:
+  - /bot           identificazione crawler
+  - /chi-siamo     about page
+  - /come-funziona guida utente
+  - /disclaimer    nota legale
 """
 
 from __future__ import annotations
@@ -47,12 +53,38 @@ async def bot_page(request: Request) -> Response:
     )
 
 
+def _info_page(request: Request, template: str, slug: str) -> Response:
+    settings = get_settings()
+    canonical = settings.yf_public_base_url.rstrip("/") + "/" + slug
+    return _templates.TemplateResponse(
+        request,
+        template,
+        {"canonical_url": canonical},
+    )
+
+
+@router.get("/chi-siamo")
+async def chi_siamo(request: Request) -> Response:
+    return _info_page(request, "public/chi-siamo.html", "chi-siamo")
+
+
+@router.get("/come-funziona")
+async def come_funziona(request: Request) -> Response:
+    return _info_page(request, "public/come-funziona.html", "come-funziona")
+
+
+@router.get("/disclaimer")
+async def disclaimer(request: Request) -> Response:
+    return _info_page(request, "public/disclaimer.html", "disclaimer")
+
+
 @router.get("/sitemap.xml")
 async def sitemap(db: DB) -> Response:
     settings = get_settings()
     base_url = settings.yf_public_base_url.rstrip("/")
 
-    # Home: lastmod = max(published_at) globale (proxy per "ultima novità")
+    # Home lastmod = max(published_at) globale (proxy per "ultima novità").
+    # Le info page hanno lastmod statico = mtime del template (build asset).
     last_global = await db.scalar(
         select(func.max(Article.published_at)).where(
             Article.processing_status == "indexed"
@@ -63,18 +95,9 @@ async def sitemap(db: DB) -> Response:
     elif last_global.tzinfo is None:
         last_global = last_global.replace(tzinfo=UTC)
 
-    entries = [
-        seo_service.SitemapEntry(
-            loc=base_url + "/",
-            lastmod=last_global,
-            changefreq="hourly",
-            priority=1.0,
-        )
-    ]
-    entries.extend(
-        await seo_service.collect_public_profile_entries(db, base_url=base_url)
+    entries = seo_service.build_static_entries(
+        base_url=base_url, home_lastmod=last_global
     )
-
     body = seo_service.build_sitemap_xml(entries)
     return Response(content=body, media_type="application/xml; charset=utf-8")
 

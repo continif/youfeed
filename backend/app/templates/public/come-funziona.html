@@ -1,0 +1,80 @@
+{% extends "public/base.html" %}
+
+{% block title %}Come funziona — YouFeed{% endblock %}
+{% block description %}Guida rapida a YouFeed: aggiungi le tue fonti, organizzale per categoria, ricevi alert sui temi che ti interessano. In 3 minuti.{% endblock %}
+
+{% block content %}
+<article class="yf-prose" style="max-width: 740px; margin: 0 auto;">
+    <h1>Come funziona</h1>
+
+    <p>
+        In tre minuti: registrazione, aggiunta delle fonti, lettura.
+        Nessun algoritmo che decide al posto tuo cosa vedere.
+    </p>
+
+    <h2>1. Registrazione</h2>
+    <p>
+        Apri <a href="/register">la pagina di registrazione</a> e crei
+        l'account con email + password, oppure con Google Login. Nessun
+        questionario di interessi, nessuna importazione forzata da social.
+    </p>
+
+    <h2>2. Aggiungi le tue fonti</h2>
+    <p>
+        Hai due strade:
+    </p>
+    <ul>
+        <li>
+            <strong>URL del feed RSS</strong> — la incolli e YouFeed la
+            valida. Tipicamente <code>https://sito.it/feed</code> o
+            <code>/rss.xml</code>.
+        </li>
+        <li>
+            <strong>URL del sito</strong> — proviamo a scovare il feed in
+            automatico leggendo l'HTML della homepage. Se ne troviamo più
+            d'uno, scegli tu.
+        </li>
+    </ul>
+    <p>
+        Per ogni fonte vedi titolo, immagine di copertina e frequenza
+        media di pubblicazione, così sai cosa aspettarti.
+    </p>
+
+    <h2>3. Organizza in categorie</h2>
+    <p>
+        Crei la tua alberatura — <em>Politica</em>, <em>Cucina</em>,
+        <em>Sport locale</em>, come ti pare. Ogni categoria può essere
+        <strong>pubblica</strong> (e diventa un mini-sito condivisibile
+        a <code>youfeed.it/iltuonome</code>, anche esportabile come feed
+        RSS) o <strong>privata</strong>.
+    </p>
+
+    <h2>4. Leggi</h2>
+    <p>
+        L'anteprima ti dà titolo + immagine + le prime righe; il click
+        sull'articolo apre la versione integrale sul sito dell'editore.
+        Salvi gli articoli che ti interessano, e il feed personale impara
+        cosa preferisci leggere (puoi sempre disattivarlo in Privacy).
+    </p>
+
+    <h2>5. Alert sugli argomenti</h2>
+    <p>
+        Imposti parole chiave — un brand, una persona, un evento — e
+        ricevi una notifica push (browser o mobile) quando una delle tue
+        fonti pubblica qualcosa che le riguarda. Niente alert da fonti
+        che non hai aggiunto: il rumore lo decidi tu.
+    </p>
+
+    <h2>Estrazione per argomenti</h2>
+    <p>
+        Dalla home di una categoria puoi vedere come le diverse testate
+        che segui hanno trattato lo stesso tema, brand o personaggio.
+        Confronto laterale, niente narrativa imposta.
+    </p>
+
+    <p style="margin-top: 32px;">
+        Pronto? <a href="/register">Crea il tuo feed</a>. Ci vogliono
+        un paio di minuti.
+    </p>
+</article>
+{% endblock %}

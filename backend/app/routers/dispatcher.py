@@ -67,6 +67,10 @@ TECH_RESERVED = frozenset(
         "sitemap.xml",
         "sw.js",
         "about",
+        "bot",
+        "chi-siamo",
+        "come-funziona",
+        "disclaimer",
     }
 )
 

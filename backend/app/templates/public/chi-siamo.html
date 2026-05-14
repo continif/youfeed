@@ -1,0 +1,49 @@
+{% extends "public/base.html" %}
+
+{% block title %}Chi siamo — YouFeed{% endblock %}
+{% block description %}YouFeed è un aggregatore di news italiano: leggi le testate che hai scelto tu, niente algoritmo opaco, niente tracker pubblicitari.{% endblock %}
+
+{% block content %}
+<article class="yf-prose" style="max-width: 740px; margin: 0 auto;">
+    <h1>Chi siamo</h1>
+
+    <p>
+        YouFeed è un aggregatore di news <strong>italiano</strong>, pensato
+        per chi è stanco di farsi imboccare le notizie da un algoritmo che
+        non ha mai chiesto il suo parere. Qui scegli tu chi seguire,
+        organizzi i feed come ti pare e — se vuoi — li condividi con un link
+        pubblico.
+    </p>
+
+    <h2>L'idea</h2>
+    <p>
+        Lettori esigenti, redazioni che pubblicano in RSS, e in mezzo un
+        client semplice che fa una sola cosa: portarti il flusso pulito,
+        senza distrazioni e senza profilazione pubblicitaria. Niente
+        suggerimenti pilotati da inserzionisti, niente sponsorizzazioni
+        nascoste, niente notifiche urlate.
+    </p>
+
+    <h2>Cosa NON facciamo</h2>
+    <ul>
+        <li>Non rivendiamo i tuoi dati di lettura a terzi.</li>
+        <li>Non mostriamo articoli sponsorizzati travestiti da notizie.</li>
+        <li>Non ricopiamo il testo degli articoli: il click ti porta sempre
+            sull'editore originale, che riceve la sua visita.</li>
+        <li>Non usiamo dark pattern per farti restare in app.</li>
+    </ul>
+
+    <h2>Chi ci sta dietro</h2>
+    <p>
+        YouFeed è un progetto indipendente, sviluppato da un piccolo team
+        di appassionati di stampa e tecnologia. Per qualunque cosa scrivi
+        a <a href="mailto:info@youfeed.it">info@youfeed.it</a>.
+    </p>
+
+    <p>
+        Curioso di vedere come funziona prima di registrarti?
+        <a href="/come-funziona">Leggi la guida</a> o
+        <a href="/register">crea il tuo feed</a>.
+    </p>
+</article>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "public/base.html" %}
+
+{% block title %}Disclaimer — YouFeed{% endblock %}
+{% block description %}Nota legale: YouFeed è un lettore di feed RSS. Non siamo editori dei contenuti che mostriamo; titoli e link restano di proprietà delle testate originali.{% endblock %}
+
+{% block content %}
+<article class="yf-prose" style="max-width: 740px; margin: 0 auto;">
+    <h1>Disclaimer</h1>
+
+    <h2>Cos'è YouFeed da un punto di vista legale</h2>
+    <p>
+        YouFeed è un <strong>servizio di aggregazione di feed RSS/Atom</strong>:
+        recupera titoli, descrizioni, immagini di copertina e link
+        pubblicati dalle testate <em>nel formato che loro stesse hanno
+        deciso di rendere disponibile</em> (cioè, appunto, il feed). Non
+        ospitiamo il testo integrale degli articoli e ogni link punta al
+        sito dell'editore originale.
+    </p>
+
+    <h2>Proprietà dei contenuti</h2>
+    <p>
+        I marchi, i titoli, le immagini e i testi delle anteprime restano
+        proprietà esclusiva delle rispettive testate. Il loro inserimento
+        in YouFeed avviene tramite il feed RSS pubblicato dall'editore
+        stesso, e segue la prassi consolidata dei lettori di feed
+        (Feedly, Inoreader, NetNewsWire, ecc.). Se sei un editore e non
+        vuoi essere indicizzato, vedi la pagina <a href="/bot">/bot</a>
+        oppure scrivici a
+        <a href="mailto:bot@youfeed.it">bot@youfeed.it</a>: rimuoviamo la
+        fonte entro 48h lavorative.
+    </p>
+
+    <h2>Accuratezza</h2>
+    <p>
+        I titoli e i sommari mostrati riflettono ciò che le testate
+        pubblicano nel proprio feed in un determinato momento. YouFeed
+        <strong>non verifica</strong> e <strong>non garantisce</strong>
+        l'accuratezza delle informazioni: per leggere la versione integrale
+        e aggiornata di una notizia, segui sempre il link all'articolo
+        originale.
+    </p>
+
+    <h2>Responsabilità</h2>
+    <p>
+        YouFeed non è responsabile di errori, omissioni, modifiche
+        successive o eventuali danni derivanti dall'uso delle informazioni
+        contenute nei feed di terze parti. L'utente prende le proprie
+        decisioni in autonomia.
+    </p>
+
+    <h2>Trattamento dati</h2>
+    <p>
+        Salviamo solo i dati strettamente necessari al funzionamento del
+        servizio (account, preferenze, segnali di lettura aggregati per
+        personalizzare il tuo feed). Non vendiamo né condividiamo questi
+        dati con terzi a fini commerciali. Dettagli nella pagina Privacy
+        (in arrivo).
+    </p>
+
+    <h2>Contatti</h2>
+    <p>
+        Per segnalazioni, rimozioni o richieste legali:
+        <a href="mailto:legal@youfeed.it">legal@youfeed.it</a>.
+    </p>
+</article>
+{% endblock %}

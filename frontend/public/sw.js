@@ -29,8 +29,9 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "YouFeed";
   const options = {
     body: payload.body || "",
-    icon: "/static/img/icon-192.png",
-    badge: "/static/img/badge-72.png",
+    icon: "/static/img/android-chrome-192x192.png",
+    // badge: monocromatica per la status bar Android — non ancora prodotta.
+    // Senza, Android usa l'icona di default del browser (cerchio).
     tag: payload.tag || undefined,
     data: { link: payload.link || "/me/feed" },
     renotify: !!payload.tag,

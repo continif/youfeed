@@ -25,8 +25,22 @@ log = structlog.get_logger()
 
 router = APIRouter(prefix="/yf_track", tags=["track"])
 
+# Allineato con `frontend/src/lib/tracking.ts` (TrackEventType). Gli aggregati
+# `articles.read_count` / `articles.open_count` sono calcolati dal worker
+# `app.workers.activity_log` matchando questi nomi — vedi anche PERSONALIZED.md.
 ALLOWED_EVENT_TYPES = frozenset(
-    {"impression", "click", "open", "dwell", "scroll", "search", "share"}
+    {
+        "impression",
+        "preview_open",
+        "dwell_5s",
+        "dwell_15s",
+        "dwell_60s",
+        "original_open",
+        "related_click",
+        "bookmark",
+        "share",
+        "search",
+    }
 )
 
 

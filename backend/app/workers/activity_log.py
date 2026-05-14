@@ -11,9 +11,9 @@ Avvio manuale per dev:
 Per ogni batch:
 1. BLPOP/LPOP fino a `batch` elementi (o timeout `max-wait`)
 2. INSERT batch su `activity_log`
-3. per gli eventi `event_type='click'`/`'open'` su un articolo:
+3. per gli eventi `event_type='preview_open'`/`'original_open'` su un articolo:
    UPDATE articles SET read_count = read_count + 1, last_read_at = NOW()
-   (l'evento `'open'` aggiorna anche `open_count`)
+   (`'original_open'` aggiorna anche `open_count`)
 """
 
 from __future__ import annotations
@@ -145,10 +145,13 @@ async def _flush_batch(events: list[dict[str, Any]]) -> None:
                 continue
             if article_id is None:
                 continue
+            # preview_open  = lettura aperta in app → conta come "read"
+            # original_open = aperto nel sito originale → conta come "read" + "open"
+            # (vedi PERSONALIZED.md per la semantica dei due contatori)
             etype = e.get("event_type")
-            if etype == "click":
+            if etype == "preview_open":
                 click_ids.append(article_id)
-            elif etype == "open":
+            elif etype == "original_open":
                 click_ids.append(article_id)
                 open_ids.append(article_id)
 

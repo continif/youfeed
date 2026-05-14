@@ -2,7 +2,15 @@
   <div>
     <header class="mb-6">
       <div class="flex items-baseline justify-between gap-3 flex-wrap">
-        <h1 class="text-2xl font-semibold">
+        <h1 class="text-2xl font-semibold flex items-center gap-2">
+          <RouterLink
+            v-if="activeTopicId"
+            :to="removeTopicTo"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-base leading-none"
+            aria-label="Rimuovi filtro topic"
+            title="Rimuovi filtro"
+            >✕</RouterLink
+          >
           <span v-if="activeCategoryName">{{ activeCategoryName }}</span>
           <span v-else-if="activeTopicId" class="text-blue-600">
             #{{ activeTopicLabel || `topic ${activeTopicId}` }}
@@ -14,18 +22,6 @@
           to="/me/feed"
           class="text-sm text-blue-600 hover:underline"
           >× Rimuovi filtro</RouterLink
-        >
-      </div>
-      <div
-        v-if="activeTopicId"
-        class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300"
-      >
-        <span>#{{ activeTopicLabel || `topic ${activeTopicId}` }}</span>
-        <RouterLink
-          :to="removeTopicTo"
-          class="ml-1 hover:opacity-75"
-          aria-label="Rimuovi filtro topic"
-          >×</RouterLink
         >
       </div>
 

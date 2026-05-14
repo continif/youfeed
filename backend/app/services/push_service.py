@@ -26,6 +26,7 @@ from cryptography.hazmat.primitives.serialization import (
     PrivateFormat,
     load_pem_private_key,
 )
+from py_vapid import Vapid01
 from pywebpush import WebPushException, webpush
 from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -178,11 +179,21 @@ def _send_one(sub_info: dict[str, Any], payload: dict[str, Any]) -> tuple[bool, 
     if not pem:
         log.warning("yf.push.no_vapid_key")
         return False, None
+    # py-vapid:
+    #   Vapid01.from_pem(bytes) → OK su SEC1 (-----BEGIN EC PRIVATE KEY-----)
+    #   Vapid01.from_string(str) → fallisce sullo stesso input (parser diverso)
+    # pywebpush, se gli passi una stringa, chiama from_string. Quindi
+    # gli passiamo già un'istanza Vapid01 — bypassa il routing buggato.
+    try:
+        vapid = Vapid01.from_pem(pem.encode())
+    except Exception as e:  # noqa: BLE001
+        log.error("yf.push.vapid_from_pem_failed", error=str(e)[:200])
+        return False, None
     try:
         webpush(
             subscription_info=sub_info,
             data=json.dumps(payload),
-            vapid_private_key=pem,
+            vapid_private_key=vapid,
             vapid_claims={"sub": settings.vapid_subject},
             ttl=86400,
         )

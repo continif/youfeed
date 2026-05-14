@@ -1118,18 +1118,29 @@ async def security_block_asn_delete(db: DB, asn: int) -> Response:
 async def security_events_list(
     request: Request,
     country: str = Query(default=""),
-    asn: int | None = Query(default=None),
+    asn: str = Query(default=""),
     ip: str = Query(default=""),
     reason: str = Query(default=""),
     hours: int = Query(default=24, ge=1, le=720),
     limit: int = Query(default=200, ge=1, le=1000),
 ) -> Response:
-    """Eventi 403 recenti, filtrabili. Finestra temporale in ore."""
+    """Eventi 403 recenti, filtrabili. Finestra temporale in ore.
+
+    `asn` arriva come stringa per consentire empty-string dai form GET
+    (un `int | None = None` rifiuterebbe `asn=` con un 422).
+    """
     import time as _time
+    asn_int: int | None = None
+    asn_clean = asn.strip()
+    if asn_clean:
+        try:
+            asn_int = int(asn_clean)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="asn deve essere un intero")
     since_ts = int(_time.time()) - hours * 3600
     events = await security_events_store.list_events(
         country=country.strip().upper() or None,
-        asn=asn,
+        asn=asn_int,
         ip=ip.strip() or None,
         reason=reason.strip() or None,
         since_ts=since_ts,
@@ -1144,7 +1155,7 @@ async def security_events_list(
             "total": total,
             "filters": {
                 "country": country,
-                "asn": asn,
+                "asn": asn_int,
                 "ip": ip,
                 "reason": reason,
                 "hours": hours,

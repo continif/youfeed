@@ -58,7 +58,20 @@ from app.models import (
 log = structlog.get_logger()
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 _templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
+
+
+def _asset_version(rel_path: str) -> str:
+    """mtime del file in static/ come query string — cache-bust automatico
+    quando il file cambia (no purge Cloudflare/browser manuale)."""
+    try:
+        return str(int((_STATIC_DIR / rel_path).stat().st_mtime))
+    except OSError:
+        return "0"
+
+
+_templates.env.globals["asset_version"] = _asset_version
 
 
 router = APIRouter(

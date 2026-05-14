@@ -147,14 +147,17 @@ done
 
 # 3d. Eventi che muovono i contatori articles (click/open).
 dim "Top articoli con read_count > 0 (ultime 24h da last_read_at):"
+# NB: il title sta su Manticore, non su Postgres — qui mostriamo source + URL.
 psql_q -c "
     SELECT
         a.id,
+        s.name           AS source,
         a.read_count,
         a.open_count,
         a.last_read_at,
-        LEFT(a.title, 60) AS titolo
+        LEFT(a.url_canonical, 70) AS url
     FROM articles a
+    LEFT JOIN sources s ON s.id = a.source_id
     WHERE a.last_read_at > NOW() - INTERVAL '24 hours'
     ORDER BY a.last_read_at DESC
     LIMIT 10;

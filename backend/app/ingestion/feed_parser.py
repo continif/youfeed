@@ -24,7 +24,7 @@ from selectolax.parser import HTMLParser
 
 log = structlog.get_logger()
 
-USER_AGENT = "YouFeed/1.0 (+https://www.youfeed.it/bot)"
+from .user_agent import USER_AGENT  # re-export per compat con import esistenti
 TIMEOUT = httpx.Timeout(15.0, connect=8.0)
 
 
@@ -203,6 +203,11 @@ async def fetch_rss(
     own_client = client is None
     client = client or httpx.AsyncClient(headers=headers, timeout=TIMEOUT)
     try:
+        # Rispettiamo robots.txt: se il sito ci esclude, niente fetch.
+        from . import robots as robots_mod
+        if not await robots_mod.can_fetch(url_feed, client=client):
+            log.info("yf.fetch_rss.robots_blocked", url=url_feed)
+            return FetchResult(error="robots_blocked")
         try:
             resp = await client.get(url_feed, headers=headers, follow_redirects=True)
         except httpx.HTTPError as e:

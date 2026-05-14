@@ -25,9 +25,9 @@ from PIL import Image, UnidentifiedImageError
 
 from app.config import get_settings
 
-log = structlog.get_logger()
+from .user_agent import USER_AGENT
 
-USER_AGENT = "YouFeed/1.0 (+https://www.youfeed.it/bot)"
+log = structlog.get_logger()
 TIMEOUT = httpx.Timeout(15.0, connect=8.0)
 MAX_BYTES = 12 * 1024 * 1024  # 12 MB hard cap (rifiutiamo immagini enormi)
 MIN_WIDTH = 200  # immagini più piccole non sono utili per le card

@@ -135,6 +135,10 @@ def _og_image_from_html(html: str, base_url: str) -> str | None:
 
 
 async def _fetch_full_page(url: str, client: httpx.AsyncClient) -> str | None:
+    from . import robots as robots_mod
+    if not await robots_mod.can_fetch(url, client=client):
+        log.info("yf.normalize.robots_blocked", url=url)
+        return None
     try:
         resp = await client.get(url, follow_redirects=True)
     except httpx.HTTPError as e:

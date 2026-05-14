@@ -27,10 +27,9 @@ import httpx
 import structlog
 from selectolax.parser import HTMLParser
 
+from .user_agent import USER_AGENT  # noqa: E402
+
 log = structlog.get_logger()
-
-
-USER_AGENT = "YouFeed/1.0 (+https://www.youfeed.it/bot)"
 
 FEED_CONTENT_TYPES = (
     "application/rss+xml",
@@ -173,6 +172,12 @@ async def _fetch_impersonate(url: str) -> "_ResponseShim | None":
 
 
 async def _fetch(client: httpx.AsyncClient, url: str) -> "httpx.Response | _ResponseShim | None":
+    # Rispettiamo robots.txt anche su discovery (l'utente sta probando un sito
+    # di cui non conosciamo lo stato delle regole).
+    from . import robots as robots_mod
+    if not await robots_mod.can_fetch(url, client=client):
+        log.info("yf.discovery.robots_blocked", url=url)
+        return None
     try:
         r = await client.get(url, follow_redirects=True, timeout=10.0)
     except httpx.HTTPError as e:

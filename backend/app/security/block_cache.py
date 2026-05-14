@@ -31,23 +31,33 @@ _loaded_at: float = 0.0
 
 
 async def _refresh(session_factory) -> None:
+    """Ricarica le 4 blacklist dal DB. Graceful: se le tabelle non esistono
+    (migration non applicata, test fixture parziale, errore di rete), tiene
+    le ultime liste valide e non solleva — il middleware continua a girare
+    in modalità "no block"."""
     global _countries, _asns, _ips, _ua_patterns, _loaded_at
     now = datetime.now(UTC)
-    async with session_factory() as session:
-        countries = (
-            await session.execute(select(BlockedCountry.iso_code))
-        ).scalars().all()
-        asns = (await session.execute(select(BlockedAsn.asn))).scalars().all()
-        ips = (
-            await session.execute(
-                select(BlockedIp.ip).where(
-                    or_(BlockedIp.expires_at.is_(None), BlockedIp.expires_at > now)
+    try:
+        async with session_factory() as session:
+            countries = (
+                await session.execute(select(BlockedCountry.iso_code))
+            ).scalars().all()
+            asns = (await session.execute(select(BlockedAsn.asn))).scalars().all()
+            ips = (
+                await session.execute(
+                    select(BlockedIp.ip).where(
+                        or_(BlockedIp.expires_at.is_(None), BlockedIp.expires_at > now)
+                    )
                 )
-            )
-        ).scalars().all()
-        uas = (
-            await session.execute(select(BlockedUserAgent.pattern))
-        ).scalars().all()
+            ).scalars().all()
+            uas = (
+                await session.execute(select(BlockedUserAgent.pattern))
+            ).scalars().all()
+    except Exception:  # noqa: BLE001
+        # Fail-open: in pratica nessun blocco finché il DB non ritorna.
+        # Tipico in test che non applicano la migration 0019/0020.
+        _loaded_at = time.monotonic()
+        return
     _countries = frozenset(c.upper() for c in countries if c)
     _asns = frozenset(int(a) for a in asns)
     _ips = frozenset(ip for ip in ips if ip)

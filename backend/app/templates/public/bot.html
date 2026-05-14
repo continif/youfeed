@@ -1,0 +1,96 @@
+{% extends "public/base.html" %}
+
+{% block title %}YouFeedBot — il crawler RSS di YouFeed{% endblock %}
+{% block description %}Documentazione tecnica per webmaster: chi è YouFeedBot, come identificarlo e come escluderlo dal proprio sito tramite robots.txt.{% endblock %}
+
+{% block content %}
+<article class="yf-prose" style="max-width: 740px; margin: 0 auto;">
+    <h1>YouFeedBot</h1>
+
+    <p>
+        Questa pagina spiega cos'è il crawler di
+        <a href="/">YouFeed</a>, perché potrebbe arrivare sul tuo sito e
+        come gestirlo. Se ti ha portato qui un log del web server, sei nel
+        posto giusto.
+    </p>
+
+    <h2>Cosa fa</h2>
+    <p>
+        YouFeed è un aggregatore di news italiano: gli utenti dichiarano
+        quali fonti vogliono seguire e noi facciamo il fetch dei loro
+        feed <strong>RSS/Atom</strong> per mostrarne i titoli e i link nelle
+        loro pagine personali. Niente scraping massivo, niente archivio
+        del testo dell'articolo: leggiamo solo quello che <em>tu</em> hai
+        deciso di pubblicare in formato feed.
+    </p>
+    <p>
+        Visite tipiche al tuo dominio:
+    </p>
+    <ul>
+        <li><code>GET /feed.xml</code> o <code>/feed/</code> ogni 15–60 min se un utente segue il tuo sito</li>
+        <li><code>GET /robots.txt</code> una volta al giorno (cached 24h)</li>
+        <li><code>GET /</code> + qualche path durante la <em>discovery</em>, solo quando un utente aggiunge il tuo dominio tra le fonti</li>
+        <li><code>GET /path/articolo</code> raramente, per recuperare l'immagine OpenGraph se mancante nel feed</li>
+    </ul>
+
+    <h2>Come identificarci</h2>
+    <p>L'header <code>User-Agent</code> delle nostre richieste è:</p>
+    <pre style="overflow-x: auto;"><code>{{ user_agent }}</code></pre>
+    <p>
+        Il <strong>token</strong> da usare nelle regole è
+        <code>{{ user_agent_token }}</code>. Le richieste arrivano dai
+        nostri IP di produzione (ASN del nostro hoster); non usiamo
+        residential proxy né TLS impersonation per i feed RSS.
+    </p>
+
+    <h2>Rispettiamo robots.txt</h2>
+    <p>
+        Prima di ogni fetch leggiamo il tuo <code>robots.txt</code> e
+        rispettiamo le regole che riguardano <code>{{ user_agent_token }}</code>
+        (o il wildcard <code>*</code>). Esempio per escluderci da tutto:
+    </p>
+    <pre style="overflow-x: auto;"><code>User-agent: {{ user_agent_token }}
+Disallow: /</code></pre>
+    <p>Per escluderci solo da una sezione:</p>
+    <pre style="overflow-x: auto;"><code>User-agent: {{ user_agent_token }}
+Disallow: /membri/
+Disallow: /paywall/</code></pre>
+    <p>
+        Cache 24h: dopo una modifica al <code>robots.txt</code> la nuova
+        policy viene recepita entro un giorno. Se ti serve immediato,
+        scrivi al contatto sotto.
+    </p>
+
+    <h2>Bloccarci a livello server/WAF</h2>
+    <p>
+        Se preferisci il blocco a livello WAF/Cloudflare:
+    </p>
+    <ul>
+        <li><strong>Cloudflare</strong>: Firewall Rules → <code>User Agent contains "{{ user_agent_token }}"</code> → Block</li>
+        <li><strong>nginx</strong>: <code>if ($http_user_agent ~* "{{ user_agent_token }}") { return 403; }</code></li>
+        <li><strong>Apache</strong>: <code>RewriteCond %{HTTP_USER_AGENT} {{ user_agent_token }} [NC]</code> + <code>RewriteRule .* - [F]</code></li>
+    </ul>
+    <p>Nessun rancore: rispettiamo ogni 403/429 e smettiamo di provare.</p>
+
+    <h2>Frequenza e carico</h2>
+    <p>
+        Lo scheduler ridistribuisce le richieste per non saturare i tuoi
+        server: poll RSS a <strong>15 min - 60 min</strong> a seconda
+        della frequenza di pubblicazione che osserviamo. Onoriamo gli
+        header <code>ETag</code> / <code>Last-Modified</code> e gestiamo
+        correttamente i 304 Not Modified — quindi le richieste effettive
+        che ti arrivano sono pochissime.
+    </p>
+
+    <h2>Contatti</h2>
+    <p>
+        Problemi, segnalazioni o richieste di whitelist:
+        <a href="mailto:bot@youfeed.it">bot@youfeed.it</a>.
+        Rispondiamo entro 48h lavorative.
+    </p>
+
+    <p style="color: var(--yf-muted); font-size: 0.85rem; margin-top: 32px;">
+        Versione bot: <code>{{ user_agent_version }}</code> · Pagina aggiornata il 2026-05.
+    </p>
+</article>
+{% endblock %}

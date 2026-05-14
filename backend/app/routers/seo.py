@@ -1,4 +1,4 @@
-"""Endpoint SEO: sitemap.xml + robots.txt.
+"""Endpoint SEO: sitemap.xml + robots.txt + /bot (pagina identificazione crawler).
 
 Niente `/yf_` prefix qui: i crawler cercano percorsi standard.
 """
@@ -6,20 +6,45 @@ Niente `/yf_` prefix qui: i crawler cercano percorsi standard.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import PlainTextResponse, Response
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.deps import DB
+from app.ingestion.user_agent import USER_AGENT, USER_AGENT_TOKEN, USER_AGENT_VERSION
 from app.models import Article
 from app.services import seo_service
 
 log = structlog.get_logger()
 
 router = APIRouter(tags=["seo"])
+
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+_templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
+
+
+@router.get("/bot")
+async def bot_page(request: Request) -> Response:
+    """Pagina pubblica di identificazione del nostro crawler.
+
+    Pubblicizzata via header `User-Agent: YouFeed/<v> (+https://www.youfeed.it/bot)`.
+    Spiega cosa fa il bot, come identificarlo e come bloccarlo via
+    robots.txt o WAF. Niente login richiesto.
+    """
+    return _templates.TemplateResponse(
+        request,
+        "public/bot.html",
+        {
+            "user_agent": USER_AGENT,
+            "user_agent_token": USER_AGENT_TOKEN,
+            "user_agent_version": USER_AGENT_VERSION,
+        },
+    )
 
 
 @router.get("/sitemap.xml")

@@ -523,7 +523,7 @@ async def classify(
 
     # Step D — NER spaCy live (Phase 1.2.A). Solo titolo (policy T-018).
     if enable_ner_extraction and title_text:
-        ner_matches = await _extract_ner_matches(session, title=title_text)
+        ner_matches = await _extract_ner_matches(session, title=title_text, idx=idx)
         out.extend(ner_matches)
 
     # Dedupe finale per topic_id: lo stesso topic può essere prodotto da più
@@ -724,17 +724,17 @@ async def _extract_regex_matches(
     # (marcato come non-topic in admin) → skip totale, no association.
     out: list[TopicMatch] = []
     for agg in persons_capped:
-        tid = await _upsert_regex_topic(session, agg["surface"], type_="person")
+        tid = await _upsert_regex_topic(session, agg["surface"], type_="person", idx=idx)
         if tid is None:
             continue
         out.append(_match_from_agg(agg, topic_id=tid))
     for agg in brands_capped:
-        tid = await _upsert_regex_topic(session, agg["surface"], type_="brand")
+        tid = await _upsert_regex_topic(session, agg["surface"], type_="brand", idx=idx)
         if tid is None:
             continue
         out.append(_match_from_agg(agg, topic_id=tid))
     for agg in models_capped:
-        tid = await _upsert_regex_topic(session, agg["surface"], type_="model")
+        tid = await _upsert_regex_topic(session, agg["surface"], type_="model", idx=idx)
         if tid is None:
             continue
         out.append(_match_from_agg(agg, topic_id=tid))
@@ -784,7 +784,10 @@ def _match_from_agg(agg: dict[str, object], *, topic_id: int) -> TopicMatch:
 
 
 async def _extract_ner_matches(
-    session: AsyncSession, *, title: str
+    session: AsyncSession,
+    *,
+    title: str,
+    idx: _CompiledIndex | None = None,
 ) -> list[TopicMatch]:
     """Step D: estrae entità via spaCy `it_core_news_lg`, upserta come Topic
     is_curated=false (stesso pattern di Step C). Solo sul titolo per coerenza
@@ -813,7 +816,7 @@ async def _extract_ner_matches(
     out: list[TopicMatch] = []
     for topic_type, ents in by_type.items():
         for e in ents:
-            tid = await _upsert_regex_topic(session, e.text, type_=topic_type)
+            tid = await _upsert_regex_topic(session, e.text, type_=topic_type, idx=idx)
             if tid is None:
                 continue
             out.append(
@@ -829,14 +832,34 @@ async def _extract_ner_matches(
 
 
 async def _upsert_regex_topic(
-    session: AsyncSession, surface: str, *, type_: str
+    session: AsyncSession,
+    surface: str,
+    *,
+    type_: str,
+    idx: _CompiledIndex | None = None,
 ) -> int | None:
     """Restituisce topic_id; crea il topic is_curated=false se non esiste.
     Lo slug è deterministico via `slugify(surface)`. Idempotente.
 
     Ritorna None se esiste già un topic con quello slug ma con type='invalid':
     è stato marcato come non-topic in admin, non va più riassociato ad articoli.
+
+    Se `idx` è passato, prima di creare un nuovo auto-topic controlla se il
+    surface è già un **alias** (o display_name) di un topic curated, e in
+    quel caso riusa l'id del curated invece di duplicare. Necessario perché
+    il check su slug non basta: "Apple" come alias di curated "Apple Inc."
+    ha slug `apple-inc`, quindi senza questo guard si creerebbe un secondo
+    topic `apple` is_curated=false.
     """
+    # Guard alias: lookup nel term map dei curated prima di insert.
+    if idx is not None:
+        norm = _normalize_term(surface)
+        ids = idx.term_to_topics_ci.get(norm) or idx.term_to_topics_cs.get(surface.strip())
+        if ids:
+            # Più curated possono condividere lo stesso alias (raro ma legale):
+            # tieni il primo, è quello inserito per primo nel build dell'index.
+            return int(ids[0])
+
     slug = slugify(surface)
     # Se esiste già un topic con questo slug (curated o no), lo riusiamo.
     # Es: "Apple" surface_form da REGEX_PER finirebbe sullo stesso slug del

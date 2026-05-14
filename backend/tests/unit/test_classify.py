@@ -333,6 +333,40 @@ def test_person_short_token_does_not_trigger_collision() -> None:
 # ---------------------------------------------------------------------------
 
 
+async def test_upsert_regex_topic_returns_curated_id_when_surface_is_alias() -> None:
+    """Se il surface estratto è un alias (o display_name) di un topic
+    curated già nell'index, _upsert_regex_topic ritorna l'id del curated
+    senza creare un nuovo auto-topic. Niente DB: la guard fa early-return."""
+    curated = FakeTopic(id=42, display_name="Apple Inc.", aliases=["Apple", "AAPL"])
+    idx = _build_index([curated])
+
+    tid = await classify._upsert_regex_topic(
+        session=None,  # type: ignore[arg-type]
+        surface="Apple",
+        type_="brand",
+        idx=idx,
+    )
+    assert tid == 42
+
+    # Alias con capitalizzazione diversa → match comunque (term map è lowercase).
+    tid = await classify._upsert_regex_topic(
+        session=None,  # type: ignore[arg-type]
+        surface="apple",
+        type_="brand",
+        idx=idx,
+    )
+    assert tid == 42
+
+    # Display_name → match.
+    tid = await classify._upsert_regex_topic(
+        session=None,  # type: ignore[arg-type]
+        surface="Apple Inc.",
+        type_="brand",
+        idx=idx,
+    )
+    assert tid == 42
+
+
 def test_title_skip_pattern_matches_offerta_offerte() -> None:
     """Articoli con 'offerta'/'offerte' nel titolo (qualsiasi case) → skip."""
     pat = classify._TITLE_SKIP_PATTERN

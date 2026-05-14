@@ -12,6 +12,7 @@ Entry:
   /chi-siamo         changefreq=yearly
   /come-funziona     changefreq=yearly
   /disclaimer        changefreq=yearly
+  /privacy           changefreq=yearly
 """
 
 from __future__ import annotations
@@ -86,6 +87,12 @@ def build_static_entries(
             lastmod=_template_lastmod("disclaimer.html", now),
             changefreq="yearly",
             priority=0.3,
+        ),
+        SitemapEntry(
+            loc=base + "/privacy",
+            lastmod=_template_lastmod("privacy.html", now),
+            changefreq="yearly",
+            priority=0.5,
         ),
     ]
 

@@ -71,6 +71,7 @@ TECH_RESERVED = frozenset(
         "chi-siamo",
         "come-funziona",
         "disclaimer",
+        "privacy",
     }
 )
 

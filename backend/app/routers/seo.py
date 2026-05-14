@@ -78,6 +78,11 @@ async def disclaimer(request: Request) -> Response:
     return _info_page(request, "public/disclaimer.html", "disclaimer")
 
 
+@router.get("/privacy")
+async def privacy(request: Request) -> Response:
+    return _info_page(request, "public/privacy.html", "privacy")
+
+
 @router.get("/sitemap.xml")
 async def sitemap(db: DB) -> Response:
     settings = get_settings()

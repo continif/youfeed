@@ -11,7 +11,7 @@ WorkingDirectory=/opt/youfeed/backend
 EnvironmentFile=/opt/youfeed/.env
 ExecStart=/opt/youfeed/.venv/bin/python -m app.utils.manage_partitions \
     --create-ahead 7 \
-    --retention-days 180
+    --retention-days 365
 
 # Logging via journald (default)
 StandardOutput=journal

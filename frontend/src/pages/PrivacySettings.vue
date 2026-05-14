@@ -57,7 +57,7 @@
     </section>
 
     <!-- Export GDPR -->
-    <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+    <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
       <h2 class="font-semibold mb-2">Scarica i miei dati</h2>
       <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
         Esporta in formato ZIP tutti i dati che YouFeed ha su di te:
@@ -72,20 +72,74 @@
         {{ downloading ? "Preparazione…" : "Scarica export ZIP" }}
       </button>
     </section>
+
+    <!-- Cancellazione account -->
+    <section class="bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900 rounded-lg p-6">
+      <h2 class="font-semibold mb-2 text-red-700 dark:text-red-400">Cancella account</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+        Rimuove permanentemente account, categorie, fonti scelte, salvati,
+        alert e sessioni attive. I segnali di lettura vengono resi anonimi
+        (non più riconducibili a te). Operazione <strong>non reversibile</strong>.
+      </p>
+
+      <div v-if="!confirmingDelete">
+        <button
+          type="button"
+          class="rounded-md border border-red-300 dark:border-red-800 text-red-700 dark:text-red-400 text-sm px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950"
+          @click="confirmingDelete = true"
+        >
+          Cancella il mio account
+        </button>
+      </div>
+
+      <div v-else class="space-y-3">
+        <p class="text-sm">
+          Per confermare, digita il tuo username <strong>{{ auth.user?.username }}</strong>:
+        </p>
+        <input
+          v-model="deleteConfirmText"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+          :placeholder="auth.user?.username"
+        />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="rounded-md bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm px-3 py-2"
+            :disabled="deleting || deleteConfirmText !== auth.user?.username"
+            @click="onDelete"
+          >
+            {{ deleting ? "Cancellazione…" : "Conferma cancellazione" }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md border border-slate-300 dark:border-slate-700 text-sm px-3 py-2"
+            :disabled="deleting"
+            @click="cancelDelete"
+          >
+            Annulla
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { useTrackingConsent } from "@/composables/useTrackingConsent";
 import { useAuthStore } from "@/stores/auth";
 import { useToastsStore } from "@/stores/toasts";
-import { downloadExport } from "@/services/me";
+import { deleteAccount, downloadExport } from "@/services/me";
 import { extractError } from "@/services/api";
 
 const { consent, grant, deny } = useTrackingConsent();
 const toasts = useToastsStore();
 const auth = useAuthStore();
+const router = useRouter();
 
 function onGrant() {
   grant();
@@ -111,6 +165,33 @@ async function onDownload() {
     toasts.error(apiErr?.message ?? "Errore durante l'export.");
   } finally {
     downloading.value = false;
+  }
+}
+
+const confirmingDelete = ref(false);
+const deleteConfirmText = ref("");
+const deleting = ref(false);
+
+function cancelDelete() {
+  confirmingDelete.value = false;
+  deleteConfirmText.value = "";
+}
+
+async function onDelete() {
+  if (deleteConfirmText.value !== auth.user?.username) return;
+  deleting.value = true;
+  try {
+    await deleteAccount();
+    // Lo store auth è ora stale: il backend ha cancellato il cookie sessione
+    // e revocato tutto. Forziamo logout client-side e ridirezione a /.
+    auth.$reset?.();
+    toasts.success("Account cancellato.");
+    await router.replace("/");
+  } catch (err) {
+    const apiErr = await extractError(err);
+    toasts.error(apiErr?.message ?? "Errore durante la cancellazione.");
+  } finally {
+    deleting.value = false;
   }
 }
 </script>

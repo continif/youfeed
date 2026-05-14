@@ -1,0 +1,189 @@
+{% extends "public/base.html" %}
+
+{% block title %}Privacy — YouFeed{% endblock %}
+{% block description %}Informativa privacy di YouFeed: cosa raccogliamo, perché, per quanto tempo e come puoi esercitare i tuoi diritti.{% endblock %}
+
+{% block content %}
+<article class="yf-prose" style="max-width: 740px; margin: 0 auto;">
+    <h1>Informativa privacy</h1>
+
+    <p style="color: var(--yf-muted); font-size: 0.9rem;">
+        Ultimo aggiornamento: maggio 2026 — versione 1.
+    </p>
+
+    <h2>Titolare del trattamento</h2>
+    <p>
+        Il titolare del trattamento è <strong>Francesco Contini</strong>,
+        via Rivergaro 11b, 00125 Roma. YouFeed è un progetto personale
+        senza scopo di lucro: nessuna partita IVA, nessun inserzionista.
+        Per qualunque richiesta:
+        <a href="mailto:info@youfeed.it">info@youfeed.it</a>.
+    </p>
+
+    <h2>Cosa raccogliamo e perché</h2>
+
+    <h3>Dati di account</h3>
+    <p>
+        Email, password (in forma hashata e mai leggibile in chiaro),
+        username, e — se accedi via Google — l'identificatore Google
+        OAuth associato. <strong>Base giuridica:</strong> esecuzione
+        del contratto (Art. 6 lett. b GDPR), servono per farti entrare
+        e tenere distinto il tuo feed dagli altri.
+    </p>
+
+    <h3>Contenuti che inserisci</h3>
+    <p>
+        Le fonti RSS che aggiungi, le categorie con cui le organizzi, i
+        salvati, gli alert. Sono i tuoi dati: li manteniamo finché tieni
+        l'account attivo, scompaiono il giorno in cui lo cancelli.
+    </p>
+
+    <h3>Comportamento di lettura</h3>
+    <p>
+        Quando dai il consenso esplicito (toggle in
+        <em>Impostazioni → Privacy</em>) registriamo segnali come:
+        articoli mostrati, anteprime aperte, click sul sito originale,
+        tempo di permanenza, salvati e condivisioni. Servono <strong>solo</strong>
+        a riordinare il feed mostrandoti per primi i temi che leggi più
+        spesso. <strong>Base giuridica:</strong> consenso (Art. 6 lett. a
+        GDPR), revocabile in qualsiasi momento dalla stessa pagina.
+    </p>
+    <p>
+        Senza consenso, questi segnali <strong>non vengono raccolti</strong>
+        e il tuo feed mostra gli articoli in ordine cronologico.
+    </p>
+
+    <h3>Fingerprint del browser</h3>
+    <p>
+        Anch'esso gated dallo stesso consenso. È un identificativo
+        tecnico calcolato dal tuo browser (canvas, font, timezone…), ci
+        permette di collegare letture fatte prima e dopo aver fatto
+        login. Non è un dato anagrafico, non lo cediamo a terzi e non
+        viene calcolato se rifiuti il tracking.
+    </p>
+
+    <h3>Cookie tecnici</h3>
+    <p>
+        Usiamo solo cookie tecnici, non cookie di profilazione: la
+        sessione di login (<code>yf_session</code>), il token CSRF
+        (<code>yf_csrf</code>) e le tue preferenze grafiche
+        (<code>yf-theme</code>, <code>showImages</code>). Per legge non
+        è richiesto banner di consenso per i cookie strettamente
+        necessari.
+    </p>
+
+    <h3>Dati tecnici di ogni richiesta</h3>
+    <p>
+        Salviamo per 12 mesi: indirizzo IP, paese derivato da database
+        offline MaxMind, ASN del provider, User-Agent, URL richiesto,
+        status code e tempo di risposta. <strong>Base giuridica:</strong>
+        legittimo interesse (Art. 6 lett. f) — servono a diagnosticare
+        problemi, bloccare scansioni automatiche e proteggere il
+        servizio.
+    </p>
+
+    <h3>Notifiche push</h3>
+    <p>
+        Se attivi gli alert, salviamo l'endpoint push del tuo browser
+        (Google FCM, Mozilla autopush, Apple) e la chiave VAPID per
+        firmare i messaggi. Il contenuto della notifica passa dai
+        servizi push del browser e noi non possiamo evitarlo: è il
+        meccanismo standard del Web Push.
+    </p>
+
+    <h2>Quello che NON facciamo</h2>
+    <ul>
+        <li>Nessun Google Analytics, Meta Pixel, Hotjar o altro
+            tracker di terze parti.</li>
+        <li>Nessun fingerprint o cookie a fini pubblicitari.</li>
+        <li>Nessuna vendita né cessione dei tuoi dati di lettura a
+            terzi.</li>
+        <li>Il click sull'articolo apre il sito originale: noi non
+            vediamo cosa fai lì.</li>
+    </ul>
+
+    <h2>Per quanto tempo teniamo i dati</h2>
+    <table>
+        <thead>
+            <tr><th>Categoria</th><th>Retention</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Account e contenuti utente</td><td>finché tieni l'account attivo</td></tr>
+            <tr><td>Comportamento di lettura (<code>activity_log</code>)</td><td>12 mesi</td></tr>
+            <tr><td>Dati di rete di ogni richiesta</td><td>12 mesi</td></tr>
+            <tr><td>Backup completi</td><td>14 giorni</td></tr>
+        </tbody>
+    </table>
+    <p>
+        Dopo questi termini le righe vengono eliminate definitivamente
+        (drop delle partition giornaliere oltre i 12 mesi).
+    </p>
+
+    <h2>Dove vivono i dati</h2>
+    <p>
+        Il servizio gira su un <strong>server privato OVH</strong>
+        (Francia/UE). OVH come hoster vede solo il traffico di rete
+        (pacchetti TCP/HTTPS), non ha accesso al database né ai
+        contenuti applicativi: è il nostro <em>responsabile esterno</em>
+        ai sensi dell'Art. 28 GDPR. Dati e backup non escono dall'UE.
+    </p>
+
+    <h2>Terze parti coinvolte</h2>
+    <ul>
+        <li><strong>Google OAuth</strong> — solo se scegli "Accedi con
+            Google". Riceviamo da Google il tuo identificativo e
+            l'email; Google sa che hai fatto login su YouFeed.</li>
+        <li><strong>Servizi push del browser</strong> (Google FCM,
+            Mozilla, Apple) — solo se attivi le notifiche, ricevono
+            l'endpoint del tuo dispositivo e il payload notifica.</li>
+        <li><strong>MaxMind GeoLite2</strong> — database scaricato
+            localmente, <em>nessun dato esce verso MaxMind</em>.</li>
+        <li><strong>Provider SMTP</strong> per inviare le email
+            transazionali (verifica account, reset password, alert).</li>
+    </ul>
+
+    <h2>I tuoi diritti</h2>
+    <p>
+        Puoi in qualunque momento (Artt. 15-22 GDPR):
+    </p>
+    <ul>
+        <li><strong>Scaricare i tuoi dati</strong> — pulsante in
+            <em>Impostazioni → Privacy → Scarica export ZIP</em>.
+            Ricevi un file con account, categorie, fonti, sessioni di
+            login e activity_log degli ultimi 12 mesi.</li>
+        <li><strong>Cancellare l'account</strong> — stesso pannello.
+            Cascade su tutti i tuoi dati personali; l'activity_log
+            viene reso anonimo (rimane il segnale aggregato, sparisce
+            il legame con te).</li>
+        <li><strong>Revocare il consenso al tracking</strong> — toggle
+            nella stessa pagina, con effetto immediato.</li>
+        <li><strong>Opporti</strong>, <strong>rettificare</strong>,
+            <strong>chiedere la portabilità</strong> — scrivi a
+            <a href="mailto:info@youfeed.it">info@youfeed.it</a>,
+            rispondiamo entro 30 giorni.</li>
+        <li><strong>Reclamare al Garante</strong>:
+            <a href="https://www.garanteprivacy.it" rel="noopener" target="_blank">www.garanteprivacy.it</a>
+            se ritieni che il trattamento violi il GDPR.</li>
+    </ul>
+
+    <h2>Contenuti delle fonti</h2>
+    <p>
+        YouFeed mostra titoli, anteprime e link verso siti di terze
+        parti che <strong>tu</strong> hai scelto di seguire.
+        <strong>Non siamo responsabili</strong> dei contenuti pubblicati
+        da quelle fonti, che restano di proprietà esclusiva degli
+        editori originali e seguono le rispettive informative privacy.
+        Quando clicchi un articolo entri sul loro sito, non sul nostro:
+        applicano le loro regole e i loro cookie.
+    </p>
+
+    <h2>Modifiche all'informativa</h2>
+    <p>
+        Se cambiamo qualcosa di rilevante (nuove categorie di dati,
+        nuovi destinatari, retention più lunga) te lo segnaliamo in
+        evidenza prima di applicare la modifica. La versione corrente è
+        sempre questa pagina, con la data di ultimo aggiornamento in
+        cima.
+    </p>
+</article>
+{% endblock %}

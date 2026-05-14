@@ -151,7 +151,7 @@ dim "Top articoli con read_count > 0 (ultime 24h da last_read_at):"
 psql_q -c "
     SELECT
         a.id,
-        s.name           AS source,
+        s.title          AS source,
         a.read_count,
         a.open_count,
         a.last_read_at,

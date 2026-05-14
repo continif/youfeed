@@ -1,6 +1,6 @@
 """Bulk refresh dei topic già presenti.
 
-Cosa fa il tool — tre operazioni opzionali, scegliere via flag:
+Cosa fa il tool — quattro operazioni opzionali, scegliere via flag:
 
 1. `--reenrich`: rilancia `wikidata_service.enrich_topic(force=True)` per
    ogni topic, popolando i campi nuovi (instance_of, country, owned_by,
@@ -11,7 +11,13 @@ Cosa fa il tool — tre operazioni opzionali, scegliere via flag:
    `brand` a `company`, "Linux" da `subject` a `software`). Per default
    è solo `--dry-run`; con `--apply` scrive in DB.
 
-3. (default se nessun flag): mostra solo statistiche sul `type` corrente
+3. `--merge-into-curated`: trova auto-topic (is_curated=false) il cui
+   display_name (normalizzato) coincide con un alias o display_name di un
+   topic curated, e riassocia gli articoli al curated eliminando l'auto.
+   Cleanup retroattivo per duplicati creati prima del fix sulla
+   `_upsert_regex_topic`. Per default dry-run; con `--apply` scrive in DB.
+
+4. (default se nessun flag): mostra solo statistiche sul `type` corrente
    e su quanti topic mancano dei campi nuovi.
 
 CLI esempi:
@@ -30,6 +36,12 @@ CLI esempi:
 
     # Lotto di 100, partendo dall'inizio (utile per primo run su 10k+)
     python -m app.utils.refresh_topics --reenrich --limit 100
+
+    # Cleanup: trova auto-topic che duplicano alias di curated (dry-run)
+    python -m app.utils.refresh_topics --merge-into-curated
+
+    # Esegui il merge per davvero
+    python -m app.utils.refresh_topics --merge-into-curated --apply
 """
 
 from __future__ import annotations
@@ -43,9 +55,10 @@ from pathlib import Path as _P
 
 import httpx
 import structlog
-from sqlalchemy import select
+from sqlalchemy import delete, select, text
 
 from app.db import dispose_engine, get_session_factory
+from app.ingestion.classify import _normalize_term
 from app.models import Topic
 from app.services.wikidata_service import (
     TIMEOUT,
@@ -212,6 +225,94 @@ async def cmd_reclassify_type(
         print("\n[dry-run] Aggiungi --apply per scrivere in DB.")
 
 
+async def cmd_merge_into_curated(session, *, apply: bool) -> None:
+    """Cleanup retroattivo: trova auto-topic (is_curated=false) il cui
+    display_name normalizzato coincide con un alias o display_name di un
+    curated, riassocia gli articoli e cancella l'auto-topic.
+
+    Step (per ogni auto duplicato):
+      1. INSERT article_topics(article_id, curated_id, score, source, position)
+         SELECT ... FROM article_topics WHERE topic_id=auto_id ON CONFLICT DO NOTHING
+         (mantiene la riga esistente del curated se l'articolo già lo aveva,
+         altrimenti la migra).
+      2. DELETE FROM article_topics WHERE topic_id=auto_id.
+      3. DELETE FROM topics WHERE id=auto_id.
+    """
+    all_topics = (await session.execute(select(Topic))).scalars().all()
+    # Escludi curated marcati 'invalid' (= "non è un topic" in admin): merger-
+    # ci dentro auto-topic significherebbe spostare associazioni su un topic
+    # che non viene mai più matchato. Lascia gli auto isolati per gestione manuale.
+    curated = [t for t in all_topics if t.is_curated and t.type != "invalid"]
+    autos = [t for t in all_topics if not t.is_curated]
+
+    # term normalizzato → curated_id. Prima vince (collisioni rare).
+    alias_to_curated: dict[str, int] = {}
+    curated_by_id: dict[int, Topic] = {int(t.id): t for t in curated}
+    for t in curated:
+        if t.display_name:
+            alias_to_curated.setdefault(_normalize_term(t.display_name), int(t.id))
+        for a in t.aliases or []:
+            if a:
+                alias_to_curated.setdefault(_normalize_term(a), int(t.id))
+
+    # auto-topic da mergiare: (auto_id, curated_id, auto_name, curated_name)
+    candidates: list[tuple[int, int, str, str]] = []
+    for a in autos:
+        if not a.display_name:
+            continue
+        norm = _normalize_term(a.display_name)
+        cid = alias_to_curated.get(norm)
+        if cid and cid != int(a.id):
+            candidates.append((int(a.id), cid, a.display_name, curated_by_id[cid].display_name))
+
+    print(f"\nMerge report:")
+    print(f"  curated totali: {len(curated)}")
+    print(f"  auto-topic totali: {len(autos)}")
+    print(f"  duplicati da mergiare: {len(candidates)}\n")
+
+    for auto_id, c_id, auto_name, c_name in candidates[:200]:
+        marker = "→" if apply else "?"
+        print(f"  #{auto_id:6d} {auto_name[:32]:32s} {marker} #{c_id:6d} {c_name[:32]}")
+    if len(candidates) > 200:
+        print(f"  …+{len(candidates) - 200} altri")
+
+    if not candidates:
+        return
+    if not apply:
+        print("\n[dry-run] Aggiungi --apply per mergiare in DB.")
+        return
+
+    moved = 0
+    for auto_id, curated_id, _, _ in candidates:
+        # 1. Migra le associazioni; PK conflict → skip (il curated già aveva l'articolo).
+        await session.execute(
+            text(
+                """
+                INSERT INTO article_topics (article_id, topic_id, score, source, position)
+                SELECT article_id, :curated_id, score, source, position
+                FROM article_topics
+                WHERE topic_id = :auto_id
+                ON CONFLICT (article_id, topic_id) DO NOTHING
+                """
+            ),
+            {"curated_id": curated_id, "auto_id": auto_id},
+        )
+        # 2. Rimuovi le vecchie associazioni dell'auto (CASCADE su delete topic basterebbe,
+        #    ma esplicito è più chiaro e più sicuro).
+        await session.execute(
+            text("DELETE FROM article_topics WHERE topic_id = :auto_id"),
+            {"auto_id": auto_id},
+        )
+        # 3. Elimina il topic auto.
+        await session.execute(delete(Topic).where(Topic.id == auto_id))
+        moved += 1
+        if moved % 50 == 0:
+            await session.commit()
+            print(f"  …{moved}/{len(candidates)} merged", file=sys.stderr)
+    await session.commit()
+    print(f"\n{moved} auto-topic merged in curated e cancellati.")
+
+
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     p.add_argument("--reenrich", action="store_true", help="Re-fetch Wikidata su topic esistenti")
@@ -239,6 +340,11 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Re-enrich anche i topic che hanno già i nuovi campi (forza retry)",
     )
+    p.add_argument(
+        "--merge-into-curated",
+        action="store_true",
+        help="Cleanup: mergia auto-topic duplicati di alias curated (default: dry-run)",
+    )
     return p.parse_args()
 
 
@@ -246,6 +352,11 @@ async def _main_async(args: argparse.Namespace) -> None:
     factory = get_session_factory()
     try:
         async with factory() as session:
+            # --merge-into-curated è standalone (non itera per type/limit).
+            if args.merge_into_curated:
+                await cmd_merge_into_curated(session, apply=args.apply)
+                return
+
             # Default: stats
             if not args.reenrich and not args.reclassify_type:
                 await cmd_stats(session)

@@ -20,6 +20,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+    load_pem_private_key,
+)
 from pywebpush import WebPushException, webpush
 from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -45,12 +51,31 @@ class PushSendResult:
 
 
 def _vapid_private_pem() -> str | None:
-    """Recupera la PEM dalla env var, sblocca i \\n escapati."""
+    """Recupera la PEM dalla env var, sblocca i \\n escapati e la
+    riserializza in formato SEC1 (`-----BEGIN EC PRIVATE KEY-----`).
+
+    py-vapid (dentro pywebpush) parsa il PEM da solo e supporta solo SEC1:
+    su PKCS8 (`-----BEGIN PRIVATE KEY-----`, che è il default di
+    `cryptography` e quello generato da `app.utils.vapid_keys`) fallisce
+    con "ASN.1 parsing error: invalid length". Convertendo qui resta
+    backward-compatible con tutte le chiavi già in giro nei `.env`.
+    """
     raw = get_settings().vapid_private_key
     if not raw:
         return None
     # In .env le multi-line vengono salvate con \\n letterali
-    return raw.replace("\\n", "\n")
+    pem = raw.replace("\\n", "\n").encode()
+    try:
+        key = load_pem_private_key(pem, password=None)
+    except Exception as e:  # noqa: BLE001
+        log.error("yf.push.vapid_pem_invalid", error=str(e)[:200])
+        return None
+    sec1 = key.private_bytes(
+        encoding=Encoding.PEM,
+        format=PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=NoEncryption(),
+    )
+    return sec1.decode()
 
 
 def is_configured() -> bool:

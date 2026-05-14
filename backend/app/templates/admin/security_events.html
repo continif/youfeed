@@ -27,6 +27,7 @@
         <tr>
             <th>Quando</th><th>IP</th><th>Country</th><th>ASN</th>
             <th>Reason</th><th>Method</th><th>Path</th><th>User-Agent</th>
+            <th>Azioni</th>
         </tr>
     </thead>
     <tbody>
@@ -34,7 +35,11 @@
         <tr>
             <td class="small">{{ e.ts | datetime }}</td>
             <td><code class="ya-inline">{{ e.ip or '—' }}</code></td>
-            <td>{{ e.country or '—' }}</td>
+            <td>
+                {% if e.country %}
+                    {{ e.country }}{% if name_by_iso.get(e.country) %} <span class="small">— {{ name_by_iso[e.country] }}</span>{% endif %}
+                {% else %}—{% endif %}
+            </td>
             <td>{% if e.asn %}AS{{ e.asn }}{% else %}—{% endif %}</td>
             <td>
                 <span class="ya-badge ya-badge-{{ 'danger' if e.reason == 'asn' else 'warn' }}">{{ e.reason }}</span>
@@ -42,9 +47,41 @@
             <td>{{ e.method or '—' }}</td>
             <td class="small">{{ e.path or '—' }}</td>
             <td class="small">{{ (e.user_agent or '')[:80] }}{% if (e.user_agent or '')|length > 80 %}…{% endif %}</td>
+            <td class="small" style="white-space: nowrap">
+                {% if e.country %}
+                    {% if e.country in blocked_countries_iso %}
+                    <span class="ya-badge ya-badge-mute">country già bloccato</span>
+                    {% else %}
+                    <form method="post" action="/yf_admin/security/blocks/countries" style="display:inline">
+                        <input type="hidden" name="iso_code" value="{{ e.country }}">
+                        <input type="hidden" name="note" value="dagli eventi · {{ e.ip or '' }}">
+                        <input type="hidden" name="return_to" value="{{ return_to }}">
+                        <button class="ya-btn" type="submit"
+                                onclick="return confirm('Bloccare il country {{ e.country }}{% if name_by_iso.get(e.country) %} ({{ name_by_iso[e.country] }}){% endif %}? Tutte le future richieste da questo paese riceveranno 403.');">
+                            Blocca country
+                        </button>
+                    </form>
+                    {% endif %}
+                {% endif %}
+                {% if e.asn %}
+                    {% if e.asn in blocked_asn_ids %}
+                    <span class="ya-badge ya-badge-mute">ASN già bloccato</span>
+                    {% else %}
+                    <form method="post" action="/yf_admin/security/blocks/asns" style="display:inline">
+                        <input type="hidden" name="asn" value="{{ e.asn }}">
+                        <input type="hidden" name="note" value="dagli eventi · {{ e.ip or '' }}">
+                        <input type="hidden" name="return_to" value="{{ return_to }}">
+                        <button class="ya-btn ya-btn-danger" type="submit"
+                                onclick="return confirm('Bloccare AS{{ e.asn }}? Tutte le future richieste da questo ASN riceveranno 403.');">
+                            Blocca ASN
+                        </button>
+                    </form>
+                    {% endif %}
+                {% endif %}
+            </td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="small">Nessun evento nella finestra.</td></tr>
+        <tr><td colspan="9" class="small">Nessun evento nella finestra.</td></tr>
         {% endfor %}
     </tbody>
 </table>

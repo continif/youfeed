@@ -1074,11 +1074,26 @@ async def security_blocks_list(request: Request, db: DB) -> Response:
     )
 
 
+def _safe_redirect(return_to: str | None, default: str) -> str:
+    """Solo path interni (`/yf_admin/...`). Niente redirect su host esterni."""
+    if return_to and return_to.startswith("/yf_admin/"):
+        return return_to
+    # Se ci arriva una URL assoluta dalla stessa origin (request.url), accettala
+    # ma riduci al path-only per evitare open-redirect.
+    if return_to and "://" in return_to:
+        from urllib.parse import urlparse
+        parsed = urlparse(return_to)
+        if parsed.path.startswith("/yf_admin/"):
+            return parsed.path + (f"?{parsed.query}" if parsed.query else "")
+    return default
+
+
 @router.post("/security/blocks/countries")
 async def security_block_country_add(
     db: DB,
     iso_code: str = Form(...),
     note: str = Form(default=""),
+    return_to: str = Form(default=""),
 ) -> Response:
     iso = iso_code.strip().upper()
     if len(iso) != 2 or not iso.isalpha():
@@ -1089,17 +1104,25 @@ async def security_block_country_add(
     await db.commit()
     await block_cache.invalidate(get_session_factory())
     log.info("yf.admin.security.country_blocked", iso_code=iso)
-    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 @router.post("/security/blocks/countries/{iso_code}/delete")
-async def security_block_country_delete(db: DB, iso_code: str) -> Response:
+async def security_block_country_delete(
+    db: DB, iso_code: str, return_to: str = Form(default="")
+) -> Response:
     iso = iso_code.strip().upper()
     await db.execute(delete(BlockedCountry).where(BlockedCountry.iso_code == iso))
     await db.commit()
     await block_cache.invalidate(get_session_factory())
     log.info("yf.admin.security.country_unblocked", iso_code=iso)
-    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 @router.post("/security/blocks/asns")
@@ -1107,6 +1130,7 @@ async def security_block_asn_add(
     db: DB,
     asn: int = Form(...),
     note: str = Form(default=""),
+    return_to: str = Form(default=""),
 ) -> Response:
     if asn <= 0:
         raise HTTPException(status_code=400, detail="asn deve essere > 0")
@@ -1116,21 +1140,30 @@ async def security_block_asn_add(
     await db.commit()
     await block_cache.invalidate(get_session_factory())
     log.info("yf.admin.security.asn_blocked", asn=asn)
-    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 @router.post("/security/blocks/asns/{asn}/delete")
-async def security_block_asn_delete(db: DB, asn: int) -> Response:
+async def security_block_asn_delete(
+    db: DB, asn: int, return_to: str = Form(default="")
+) -> Response:
     await db.execute(delete(BlockedAsn).where(BlockedAsn.asn == asn))
     await db.commit()
     await block_cache.invalidate(get_session_factory())
     log.info("yf.admin.security.asn_unblocked", asn=asn)
-    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 @router.get("/security/events")
 async def security_events_list(
     request: Request,
+    db: DB,
     country: str = Query(default=""),
     asn: str = Query(default=""),
     ip: str = Query(default=""),
@@ -1161,6 +1194,17 @@ async def security_events_list(
         limit=limit,
     )
     total = await security_events_store.total_count(since_ts)
+    # Per disabilitare i bottoni "Blocca" sulle righe il cui country/ASN è già
+    # in blacklist (e per mostrare il nome country accanto al codice).
+    blocked_countries_iso = set(
+        (await db.execute(select(BlockedCountry.iso_code))).scalars().all()
+    )
+    blocked_asn_ids = set(
+        int(a) for a in (await db.execute(select(BlockedAsn.asn))).scalars().all()
+    )
+    name_by_iso = dict(security_countries.list_countries())
+    # return_to preserva i filtri correnti quando l'admin clicca "Blocca …"
+    return_to = str(request.url)
     return _templates.TemplateResponse(
         request,
         "admin/security_events.html",
@@ -1175,6 +1219,10 @@ async def security_events_list(
                 "hours": hours,
                 "limit": limit,
             },
+            "blocked_countries_iso": blocked_countries_iso,
+            "blocked_asn_ids": blocked_asn_ids,
+            "name_by_iso": name_by_iso,
+            "return_to": return_to,
         },
     )
 

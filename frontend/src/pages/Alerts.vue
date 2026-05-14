@@ -167,18 +167,21 @@
 
 <script setup lang="ts">
 import { onMounted, ref, type DirectiveBinding } from "vue";
+import { useRouter } from "vue-router";
 import {
   createAlert,
   deleteAlert,
   listAlerts,
   updateAlert,
 } from "@/services/alerts";
+import { currentSubscription, pushSupported } from "@/services/push";
 import { suggest as suggestApi } from "@/services/search";
 import { useToastsStore } from "@/stores/toasts";
 import { extractError } from "@/services/api";
 import type { AlertMatchMode, AlertOut, AlertTopicOut, SuggestTopicItem } from "@/types/api";
 
 const toasts = useToastsStore();
+const router = useRouter();
 
 const alerts = ref<AlertOut[]>([]);
 const loading = ref(true);
@@ -280,11 +283,36 @@ async function onToggleEnabled(a: AlertOut) {
   }
 }
 
+async function pushReadyOnThisDevice(): Promise<boolean> {
+  if (!pushSupported()) return false;
+  if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+    return false;
+  }
+  const sub = await currentSubscription();
+  return sub !== null;
+}
+
 async function onToggleChannel(a: AlertOut, channel: string) {
   const has = a.channels.includes(channel);
   const next = has
     ? a.channels.filter((c) => c !== channel)
     : [...a.channels, channel];
+
+  // Se sta accendendo "push" ma il browser non è subscribed, glielo dice e
+  // lo offre il link diretto. Il canale viene comunque salvato come
+  // preferenza: se in futuro attiva le push da un device, l'alert le riceve.
+  if (!has && channel === "push" && !(await pushReadyOnThisDevice())) {
+    const goNow = window.confirm(
+      "Per ricevere notifiche push devi prima attivarle in questo browser.\n\n" +
+        "Vuoi andare ora alla pagina per attivarle?",
+    );
+    if (goNow) {
+      await router.push("/me/settings/notifications");
+      return;
+    }
+    toasts.info("Canale push salvato come preferenza, ma non riceverai notifiche finché non le attivi.");
+  }
+
   try {
     const updated = await updateAlert(a.id, { channels: next });
     const idx = alerts.value.findIndex((x) => x.id === a.id);

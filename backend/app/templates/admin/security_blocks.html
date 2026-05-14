@@ -12,27 +12,41 @@
 <div class="ya-card">
     <h2>Country bloccati ({{ countries|length }})</h2>
     <form action="/yf_admin/security/blocks/countries" method="post" class="ya-filters">
-        <input type="text" name="iso_code" placeholder="ISO-2 (es. RU)" maxlength="2" required style="width:6em; text-transform: uppercase">
+        <select name="iso_code" required style="min-width: 280px">
+            <option value="">— Scegli country —</option>
+            {% for iso, name in all_countries %}
+            <option value="{{ iso }}" {% if iso in blocked_iso %}disabled{% endif %}>
+                {{ name }} ({{ iso }}){% if iso in blocked_iso %} — già bloccato{% endif %}
+            </option>
+            {% endfor %}
+        </select>
         <input type="text" name="note" placeholder="Nota (opzionale)" style="flex: 1; min-width: 220px">
         <button type="submit">Aggiungi</button>
     </form>
+    {% if not all_countries %}
+    <p class="small" style="color: var(--ya-warn)">
+        ⚠ MaxMind GeoLite2-Country.mmdb non trovato — usa input ISO-2 manuale o
+        lancia <code class="ya-inline">infra/scripts/maxmind-refresh.sh</code>.
+    </p>
+    {% endif %}
     <table class="ya-table">
-        <thead><tr><th>ISO</th><th>Nota</th><th>Aggiunto</th><th>Azione</th></tr></thead>
+        <thead><tr><th>ISO</th><th>Country</th><th>Nota</th><th>Aggiunto</th><th>Azione</th></tr></thead>
         <tbody>
             {% for c in countries %}
             <tr>
                 <td><strong>{{ c.iso_code }}</strong></td>
+                <td>{{ name_by_iso.get(c.iso_code, '—') }}</td>
                 <td>{{ c.note or '—' }}</td>
                 <td class="small">{{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '—' }}</td>
                 <td>
                     <form method="post" action="/yf_admin/security/blocks/countries/{{ c.iso_code }}/delete"
-                          onsubmit="return confirm('Rimuovere il blocco su {{ c.iso_code }}?');" style="display:inline">
+                          onsubmit="return confirm('Rimuovere il blocco su {{ c.iso_code }} ({{ name_by_iso.get(c.iso_code, '') }})?');" style="display:inline">
                         <button class="ya-btn ya-btn-danger" type="submit">Sblocca</button>
                     </form>
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="4" class="small">Nessun country bloccato.</td></tr>
+            <tr><td colspan="5" class="small">Nessun country bloccato.</td></tr>
             {% endfor %}
         </tbody>
     </table>

@@ -57,7 +57,7 @@ from app.models import (
     User,
 )
 from app.db import get_session_factory
-from app.security import block_cache, events_store as security_events_store
+from app.security import block_cache, countries as security_countries, events_store as security_events_store
 
 log = structlog.get_logger()
 
@@ -1046,17 +1046,31 @@ async def cache_reload() -> Response:
 
 @router.get("/security/blocks")
 async def security_blocks_list(request: Request, db: DB) -> Response:
-    """Liste blocked_countries + blocked_asns + form di aggiunta inline."""
+    """Liste blocked_countries + blocked_asns + form di aggiunta inline.
+
+    Carica anche l'elenco completo dei country dal MMDB per popolare il
+    `<select>` di aggiunta (così l'admin sceglie da menù invece di scrivere
+    l'ISO-2 a memoria). Lookup `iso_code → name` per la tabella corrente.
+    """
     countries = (
         await db.execute(select(BlockedCountry).order_by(BlockedCountry.iso_code))
     ).scalars().all()
     asns = (
         await db.execute(select(BlockedAsn).order_by(BlockedAsn.asn))
     ).scalars().all()
+    all_countries = security_countries.list_countries()
+    name_by_iso = dict(all_countries)
+    blocked_iso = {c.iso_code for c in countries}
     return _templates.TemplateResponse(
         request,
         "admin/security_blocks.html",
-        {"countries": list(countries), "asns": list(asns)},
+        {
+            "countries": list(countries),
+            "asns": list(asns),
+            "all_countries": all_countries,
+            "name_by_iso": name_by_iso,
+            "blocked_iso": blocked_iso,
+        },
     )
 
 

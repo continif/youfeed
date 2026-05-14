@@ -501,58 +501,208 @@ utenti:
 - Export GDPR: il prossimo data-takeout deve includere
   `user_topic_affinity` + `user_source_affinity`.
 
+## Condivisione articoli (sharing)
+
+Funzionalità nuova che alimenta direttamente il segnale `share` del
+ranker (peso +2.0). Bottone di condivisione **sull'overlay della foto
+articolo, in basso a sinistra**, simmetrico al bookmark (top-right).
+
+### Comportamento
+
+Click sul bottone → menu/popover con 5 piattaforme + "Copia link":
+
+| Target    | URL intent                                                              |
+|-----------|-------------------------------------------------------------------------|
+| LinkedIn  | `https://www.linkedin.com/sharing/share-offsite/?url={URL}`             |
+| WhatsApp  | `https://wa.me/?text={ENCODED_TITLE_PLUS_URL}`                          |
+| Threads   | `https://threads.net/intent/post?text={ENCODED_TITLE_PLUS_URL}`         |
+| X         | `https://twitter.com/intent/tweet?text={TITLE}&url={URL}`               |
+| Substack  | "Copia link" (no share intent pubblico) → `navigator.clipboard.writeText` + toast |
+
+**URL condiviso**: `article.url_canonical` (link originale della fonte).
+Razionale: l'utente vuole condividere la notizia, non il pannello YouFeed.
+Si può eventualmente aggiungere `?ref=youfeed` per attribution analytics
+ma è opzionale. Da rivedere se in futuro vorremo spingere visite alla
+pagina pubblica `/{username}`.
+
+### UX
+
+- Icona overlay in basso-sinistra dell'immagine, simmetrica al bookmark
+  (`absolute left-2 bottom-2`, ~32×32px, bg semitrasparente nero, hover
+  blu).
+- Click → popover ancorato sotto/sopra il bottone (Headless UI o markup
+  manuale Vue, niente librerie aggiuntive).
+- Sotto i 5 brand: link "Copia link" (clipboard) + se disponibile
+  `navigator.share` → bottone "Sistema (condividi…)" che apre il dialog
+  nativo mobile.
+- Tutti i click sui target emettono `share` con
+  `metadata = {"to": "linkedin"|"whatsapp"|"x"|"threads"|"substack"|"copy"|"native"}`.
+
+### Componente
+
+Nuovo `ShareButton.vue` riutilizzabile in:
+- `ArticleCard.vue` (timeline)
+- `ArticleDetail.vue` (sulla foto grande)
+
+Props: `articleId`, `title`, `url`, `position` (per orientare il popover
+in alto/basso a seconda del layout).
+
 ## Phase d'implementazione
 
-### Phase 0 — preparazione (no UI change)
-- [ ] Verificare che `target_type='article'` + `target_id=<id>` siano
-      effettivamente popolati dai pochi eventi che oggi finiscono in
-      `activity_log` (probabilmente NO → vedi Phase 1).
-- [ ] Migration per `user_topic_affinity` + `user_source_affinity`.
+Cinque fasi, organizzate per parallellizzabilità. Il task fa
+"sharing" è dentro Phase 1 perché alimenta uno dei segnali del ranker.
 
-### Phase 1 — emissione eventi (silent collection)
-- [ ] In `ArticleCard.vue`: IntersectionObserver → emit `impression`
-      una volta per articolo per sessione, debounce 500ms.
-- [ ] In `ArticleCard.vue` (click sul card che apre `/me/article/N`):
-      emit `preview_open`.
-- [ ] In `ArticleDetail.vue`: timer + visibility → emit `dwell_5s`,
-      poi `dwell_15s`, poi `dwell_60s` (cumulativi, NON overlappabili).
-- [ ] In `ArticleDetail.vue`, click sul bottone "Apri l'articolo
-      originale": emit `original_open` PRIMA del `window.open`.
-- [ ] Click su una card nelle "notizie correlate" della detail page:
-      emit `related_click` con `metadata = {"from_article":<A>,
-      "shared_topics":[<id>,<id>,...]}`. Lo shared_topics si calcola
-      lato client (ha sia A.topics che B.topics).
-- [ ] Bottone 💾 bookmark e "condividi" → emit `bookmark`/`share`.
-- [ ] Tutti gli emit gated su `useTrackingConsent.consent === 'granted'`.
-- [ ] Helper centrale `lib/tracking.ts` con `trackEvent(type, target, metadata?)`
-      che fa `fetch('/yf_track', { keepalive: true })` + gestisce
-      l'header `X-YF-Fingerprint`.
-- [ ] Almeno 2 settimane in produzione prima di Phase 2 → bisogna avere
-      dati su cui calcolare l'affinity.
+### Phase 1 — Frontend tracking + sharing (settimana 1-2, parallelizzabile)
 
-### Phase 2 — calcolo offline affinity
-- [ ] Utility CLI `app.utils.compute_affinities` che fa il rollup SQL.
-- [ ] Systemd timer `yf-compute-affinities` 04:00 + 16:00 UTC.
-- [ ] Backfill iniziale: lancio manuale.
+**1.A · Helper tracking centralizzato**
+- [ ] `lib/tracking.ts` con `trackEvent(type, target?, metadata?)`
+- [ ] Internamente: `fetch('/yf_track', { method:'POST', keepalive:true })`,
+      header `X-YF-Fingerprint` se consent==granted
+- [ ] Throttle/dedupe per impression (1 hit per (article_id, session))
 
-### Phase 3 — re-rank online
-- [ ] `app/services/ranking_service.py`: linear scoring + diversity penalty.
-- [ ] `articles_service.timeline_for_user` chiama il ranker se l'utente
-      ha affinity sufficiente (>= 20 righe in `user_topic_affinity`).
-- [ ] Redis cache della lista ordinata per pagination stabile.
-- [ ] Toggle utente "ordina cronologico" in settings.
+**1.B · Eventi dal feed timeline**
+- [ ] `ArticleCard.vue`: IntersectionObserver → emit `impression`
+      (debounce 500ms, una volta per articolo per pagina)
+- [ ] `ArticleCard.vue` click su card → emit `preview_open` PRIMA del
+      router-push
 
-### Phase 4 — fingerprint merge
-- [ ] Hook al signup: UPDATE `activity_log` con `user_id` dai
-      fingerprint correnti.
-- [ ] Re-trigger immediato del rollup affinity per il nuovo user.
+**1.C · Eventi dalla detail page**
+- [ ] `ArticleDetail.vue`: timer +
+      `document.visibilityState='visible'` → emit `dwell_5s` a 5s,
+      `dwell_15s` a 15s, `dwell_60s` a 60s (cumulativi sulla stessa
+      visita, niente double-fire)
+- [ ] Click sul bottone "Apri l'articolo originale": emit
+      `original_open` con `keepalive:true` PRIMA del `window.open`
+- [ ] Click su una card delle "notizie correlate": emit `related_click`
+      con `metadata = {"from_article":A, "shared_topics":[ids]}` —
+      gli shared_topics si calcolano client-side dall'intersezione di
+      `A.topics` con `B.topics` (entrambe già nel payload)
 
-### Phase 5 — A/B test e tuning pesi
-- [ ] Flag in `users.metadata.ranking_arm` per assegnare utenti a
-      `'chrono' | 'ranked'` random 50/50.
-- [ ] Misura proxy di engagement: click-through rate, bookmark rate,
-      dwell medio per session, ritorni a 24h.
-- [ ] Promozione del ranker a default se vince in tutte e 4 le metriche.
+**1.D · Eventi da azioni esplicite**
+- [ ] Bookmark button → emit `bookmark` quando aggiunge (NON quando rimuove)
+- [ ] Share button (vedi 1.E) → emit `share` con destination
+
+**1.E · Sharing — componente ShareButton.vue (nuovo)**
+- [ ] Markup base: icona overlay `absolute left-2 bottom-2 w-8 h-8`
+      simmetrica al bookmark, bg nero/55 + hover blue-600
+- [ ] Popover Vue con 5 + 2 azioni (LinkedIn, WhatsApp, Threads, X,
+      Substack/copia, copia diretta, native share se disponibile)
+- [ ] Helper `buildShareUrl(target, title, url)` con encoding corretto
+- [ ] Substack target: `await navigator.clipboard.writeText(url)` +
+      toast "Link copiato"
+- [ ] Native Web Share: bottone visibile solo se `navigator.share`
+      esiste (mobile)
+- [ ] Integrazione in `ArticleCard.vue` (over la foto)
+- [ ] Integrazione in `ArticleDetail.vue` (over la foto grande)
+- [ ] Telemetria: ogni target emette `share` con `metadata.to`
+- [ ] Test manuale su mobile (verifica intent URL aprano l'app nativa)
+
+**1.F · Consent + privacy**
+- [ ] Tutti gli emit di tracking gated su `useTrackingConsent.consent === 'granted'`
+- [ ] Bottoni share funzionano ANCHE senza consent (è azione esplicita),
+      ma l'evento `share` viene loggato solo con consent
+- [ ] In `PrivacySettings.vue`: nuova toggle "Feed personalizzato" — se
+      off, il backend salta la rollup per quell'utente (`users.personalize=false`)
+
+**1.G · Verifica raccolta dati**
+- [ ] Dopo deploy, controlla in `activity_log` che gli eventi nuovi
+      arrivino con `target_type='article'` + `target_id` valido
+- [ ] Lascia girare **almeno 2 settimane** prima di Phase 2: serve un
+      dataset di partenza
+
+### Phase 2 — Affinity rollup (settimana 3, dipende da dati Phase 1)
+
+**2.A · Schema**
+- [ ] Migration 0021: tabelle `user_topic_affinity` + `user_source_affinity`
+      (vedi pseudocodice sopra)
+- [ ] Migration aggiunge anche colonna `users.personalize BOOLEAN DEFAULT TRUE`
+
+**2.B · Helper per half-life**
+- [ ] PL/pgSQL function `half_life_seconds(topic_type TEXT)` che
+      ritorna 30/15/5 giorni in secondi (default 30g se type sconosciuto)
+
+**2.C · Rollup CLI**
+- [ ] `app/utils/compute_affinities.py` — analoga a
+      [`refresh_topics.py`](../backend/app/utils/refresh_topics.py): carica .env,
+      apre session, esegue le query SQL del doc, commit. Idempotente.
+- [ ] Supporta `--user-id N` per ricalcolare un singolo utente (utile
+      per signup hook in Phase 4)
+- [ ] Supporta `--dry-run` con stats (n. utenti aggiornati, n. topic,
+      tempo)
+
+**2.D · Schedule**
+- [ ] `infra/systemd/yf-compute-affinities.service` + `.timer`
+      (04:00 + 16:00 UTC, dopo `yf-reclassify-topics`)
+- [ ] Aggiornare `infra/systemd/README.md`
+
+**2.E · Prune**
+- [ ] Aggiungere al [retention_service](../backend/app/services/retention_service.py):
+      `DELETE FROM user_topic_affinity WHERE last_seen < now() - 180g OR score < 0.05`
+- [ ] Stesso pattern per `user_source_affinity`
+
+**2.F · Backfill iniziale**
+- [ ] Lancio manuale via screen: `python -m app.utils.compute_affinities --all`
+- [ ] Verificare che le top-affinity dell'utente di test (`drtarr`) abbiano senso
+
+### Phase 3 — Re-rank online (settimana 4)
+
+**3.A · Ranking service**
+- [ ] `app/services/ranking_service.py`:
+  - `score_candidate(article, affinity_topic, affinity_source, already_picked)`
+  - `rerank(candidates: list, user_affinities) -> list[ranked]`
+  - Pesi `w_fresh/w_topic/w_source/w_div` come costanti modulo (tunabili)
+
+**3.B · Integration nel timeline**
+- [ ] In `articles_service.timeline_for_user`:
+  - if user.personalize == False → vecchio path chronologico
+  - if affinity rows < 20 → cold-start, vecchio path
+  - else: query top-100 candidates, passa a `rerank()`, ritaglia a `limit`
+- [ ] Logging strutturato: `yf.ranking.applied user_id=… arm=ranked|chrono`
+
+**3.C · Stable pagination**
+- [ ] Redis key `yf:rank:{user_id}:{request_ts}` con TTL 30min, JSON
+      della lista ordinata di article_id
+- [ ] Cursor opaco = `(request_ts, offset)` base64
+- [ ] Pagine successive: deserializza cursor, pesca dalla lista cached,
+      avanza offset
+
+**3.D · Toggle utente**
+- [ ] In `PrivacySettings.vue`: toggle "Feed personalizzato" già da Phase 1.F
+- [ ] PATCH `/yf_me/preferences` aggiorna `users.personalize`
+
+### Phase 4 — Fingerprint merge (settimana 4, parallelo a Phase 3)
+
+**4.A · Hook signup**
+- [ ] In `auth_service.create_user` (o equivalente post-signup):
+      legge `X-YF-Fingerprint` dalla request,
+      `UPDATE activity_log SET user_id=new_id WHERE user_id IS NULL
+       AND fingerprint=$fp AND ts >= now() - 30d`
+- [ ] Trigger immediato `compute_affinities --user-id new_id` in background
+      (RQ enqueue, non blocca la response)
+
+**4.B · Test**
+- [ ] Test end-to-end: utente anonimo legge 5 articoli → si registra →
+      affinity table popolata immediatamente
+
+### Phase 5 — A/B test e tuning (settimana 5+)
+
+**5.A · Assegnazione arm**
+- [ ] Migration: aggiunge `users.ranking_arm CHAR(8) DEFAULT NULL`
+- [ ] All'attivazione di un utente: random 50/50 → `'chrono'` o `'ranked'`
+- [ ] `timeline_for_user` rispetta `ranking_arm`
+
+**5.B · Metriche**
+- [ ] Pannello admin `/yf_admin/ranking/metrics`:
+  - CTR per arm (click / impression)
+  - Bookmark rate per arm
+  - Dwell medio sessione per arm
+  - Retention D+1, D+7 per arm
+- [ ] Update settimanale, non realtime (heavy query)
+
+**5.C · Decisione**
+- [ ] Se `ranked` vince in 3/4 metriche → promuove a default per tutti
+- [ ] Se perde → analisi qualitativa, ritorna a chrono o ritunà pesi
+- [ ] Salva pesi finali + risultato A/B in `STATUS.md`
 
 ## Open questions
 

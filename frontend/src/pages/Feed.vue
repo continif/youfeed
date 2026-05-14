@@ -6,7 +6,7 @@
           <RouterLink
             v-if="activeTopicId"
             :to="removeTopicTo"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-base leading-none"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 transition-colors text-base leading-none shadow-sm"
             aria-label="Rimuovi filtro topic"
             title="Rimuovi filtro"
             >✕</RouterLink

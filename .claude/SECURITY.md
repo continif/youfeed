@@ -47,10 +47,37 @@ Questa sezione descrive il layer di blocco a livello applicativo per:
   `created_at`. Esempio: `('RU', 'scanner brute-force 2026-05-14')`.
 - **`blocked_asns`**: `asn` (PK, integer), `note`, `created_at`. Esempio:
   `(14061, 'DigitalOcean VPS scraper')`.
+- **`blocked_ips`**: `ip` (PK, text), `note`, `expires_at` (nullable —
+  permanente se NULL), `created_at`. Auto-popolata dal middleware quando
+  un IP non autenticato hit un scanner-path (vedi sotto), con
+  `expires_at = now + 24h`. Admin può aggiungere manualmente.
+- **`blocked_user_agents`**: `pattern` (PK, text), `note`, `created_at`.
+  Match substring **case-insensitive**: `pattern.lower() in ua.lower()`.
+  Niente regex (no ReDoS, no syntax-error nei pattern).
 
 Modifiche via `/yf_admin/security/blocks` (CRUD form-POST classico). Il
 middleware ricarica la lista ogni 60s (TTL in-memory) — in alternativa, dopo
 ogni add/remove il router chiama una `invalidate_block_cache()` esplicita.
+
+### 1b. Auto-ban da scanner-path
+
+Lista hardcoded di path tipici degli scanner di vulnerabilità in
+[`backend/app/security/scanner_paths.py`](../backend/app/security/scanner_paths.py)
+(`.env`, `.git/config`, `wp-login.php`, `wp-admin`, `xmlrpc.php`,
+`phpmyadmin`, `actuator/`, ecc.). Se una richiesta hit uno di questi path
+**E** non porta il cookie di sessione `yf_session`, il middleware:
+
+1. Insert/upsert in `blocked_ips` con `expires_at = now + 24h`
+2. Invalida la cache locale → l'IP è bannato immediatamente per questo worker
+3. Ritorna 403 (la richiesta corrente già viene bloccata)
+4. Logga l'evento su SQLite con `reason='scanner-path'`
+
+L'auto-ban **NON scatta** se l'utente è loggato (heuristica cookie-only,
+proxy economico per "autenticato" senza DB lookup). Se hai bisogno di
+controllare path-scanner sui logged-in (caso raro), va tolto il guard.
+
+Il cron di retention sweep elimina le righe scadute (`expires_at < now -
+N giorni`) — vedi sezione retention.
 
 ### 2. SQLite — eventi (forensics)
 

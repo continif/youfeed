@@ -48,6 +48,22 @@
             <td class="small">{{ e.path or '—' }}</td>
             <td class="small">{{ (e.user_agent or '')[:80] }}{% if (e.user_agent or '')|length > 80 %}…{% endif %}</td>
             <td class="small" style="white-space: nowrap">
+                {% if e.ip %}
+                    {% if e.ip in blocked_ip_set %}
+                    <span class="ya-badge ya-badge-mute">IP già bloccato</span>
+                    {% else %}
+                    <form method="post" action="/yf_admin/security/blocks/ips" style="display:inline">
+                        <input type="hidden" name="ip" value="{{ e.ip }}">
+                        <input type="hidden" name="hours" value="24">
+                        <input type="hidden" name="note" value="dagli eventi · {{ e.path or '' }}">
+                        <input type="hidden" name="return_to" value="{{ return_to }}">
+                        <button class="ya-btn" type="submit"
+                                onclick="return confirm('Bloccare l\'IP {{ e.ip }} per 24h?');">
+                            Blocca IP 24h
+                        </button>
+                    </form>
+                    {% endif %}
+                {% endif %}
                 {% if e.country %}
                     {% if e.country in blocked_countries_iso %}
                     <span class="ya-badge ya-badge-mute">country già bloccato</span>

@@ -48,6 +48,8 @@ from app.models import (
     AuthSession,
     BlockedAsn,
     BlockedCountry,
+    BlockedIp,
+    BlockedUserAgent,
     Entity,
     FeaturedSource,
     Source,
@@ -1046,7 +1048,7 @@ async def cache_reload() -> Response:
 
 @router.get("/security/blocks")
 async def security_blocks_list(request: Request, db: DB) -> Response:
-    """Liste blocked_countries + blocked_asns + form di aggiunta inline.
+    """Liste blocked_countries + blocked_asns + blocked_ips + blocked_user_agents.
 
     Carica anche l'elenco completo dei country dal MMDB per popolare il
     `<select>` di aggiunta (così l'admin sceglie da menù invece di scrivere
@@ -1058,6 +1060,16 @@ async def security_blocks_list(request: Request, db: DB) -> Response:
     asns = (
         await db.execute(select(BlockedAsn).order_by(BlockedAsn.asn))
     ).scalars().all()
+    ips = (
+        await db.execute(
+            select(BlockedIp).order_by(BlockedIp.expires_at.desc().nulls_first(), BlockedIp.ip)
+        )
+    ).scalars().all()
+    uas = (
+        await db.execute(
+            select(BlockedUserAgent).order_by(BlockedUserAgent.pattern)
+        )
+    ).scalars().all()
     all_countries = security_countries.list_countries()
     name_by_iso = dict(all_countries)
     blocked_iso = {c.iso_code for c in countries}
@@ -1067,6 +1079,8 @@ async def security_blocks_list(request: Request, db: DB) -> Response:
         {
             "countries": list(countries),
             "asns": list(asns),
+            "ips": list(ips),
+            "uas": list(uas),
             "all_countries": all_countries,
             "name_by_iso": name_by_iso,
             "blocked_iso": blocked_iso,
@@ -1160,6 +1174,103 @@ async def security_block_asn_delete(
     )
 
 
+# --- IP ---
+
+
+@router.post("/security/blocks/ips")
+async def security_block_ip_add(
+    db: DB,
+    ip: str = Form(...),
+    note: str = Form(default=""),
+    hours: str = Form(default=""),
+    return_to: str = Form(default=""),
+) -> Response:
+    """Aggiunge un IP a blocked_ips. `hours` vuoto = permanente."""
+    ip_clean = ip.strip()
+    if not ip_clean or len(ip_clean) > 64:
+        raise HTTPException(status_code=400, detail="ip non valido")
+    expires_at = None
+    if hours.strip():
+        try:
+            h = int(hours)
+            if h <= 0 or h > 24 * 365:
+                raise ValueError
+        except ValueError:
+            raise HTTPException(status_code=400, detail="hours deve essere 1..8760")
+        from datetime import UTC as _UTC, datetime as _dt, timedelta as _td
+        expires_at = _dt.now(_UTC) + _td(hours=h)
+    stmt = pg_insert(BlockedIp).values(
+        ip=ip_clean, note=note.strip() or None, expires_at=expires_at
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["ip"],
+        set_={"note": stmt.excluded.note, "expires_at": stmt.excluded.expires_at},
+    )
+    await db.execute(stmt)
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.ip_blocked", ip=ip_clean, expires_at=expires_at)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/security/blocks/ips/{ip}/delete")
+async def security_block_ip_delete(
+    db: DB, ip: str, return_to: str = Form(default="")
+) -> Response:
+    await db.execute(delete(BlockedIp).where(BlockedIp.ip == ip))
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.ip_unblocked", ip=ip)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+# --- User-Agent ---
+
+
+@router.post("/security/blocks/uas")
+async def security_block_ua_add(
+    db: DB,
+    pattern: str = Form(...),
+    note: str = Form(default=""),
+    return_to: str = Form(default=""),
+) -> Response:
+    """Aggiunge un pattern substring case-insensitive ai blocked_user_agents."""
+    p = pattern.strip()
+    if len(p) < 3 or len(p) > 200:
+        raise HTTPException(status_code=400, detail="pattern lungo 3..200 char")
+    stmt = pg_insert(BlockedUserAgent).values(pattern=p, note=note.strip() or None)
+    stmt = stmt.on_conflict_do_nothing(index_elements=["pattern"])
+    await db.execute(stmt)
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.ua_blocked", pattern=p)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/security/blocks/uas/delete")
+async def security_block_ua_delete(
+    db: DB, pattern: str = Form(...), return_to: str = Form(default="")
+) -> Response:
+    """Pattern arriva via Form (non path param): può contenere `/`."""
+    await db.execute(delete(BlockedUserAgent).where(BlockedUserAgent.pattern == pattern))
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.ua_unblocked", pattern=pattern)
+    return RedirectResponse(
+        url=_safe_redirect(return_to, "/yf_admin/security/blocks"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
 @router.get("/security/events")
 async def security_events_list(
     request: Request,
@@ -1194,13 +1305,22 @@ async def security_events_list(
         limit=limit,
     )
     total = await security_events_store.total_count(since_ts)
-    # Per disabilitare i bottoni "Blocca" sulle righe il cui country/ASN è già
+    # Per disabilitare i bottoni "Blocca" sulle righe il cui country/ASN/IP è già
     # in blacklist (e per mostrare il nome country accanto al codice).
+    from datetime import UTC as _UTC, datetime as _dt
+    _now = _dt.now(_UTC)
     blocked_countries_iso = set(
         (await db.execute(select(BlockedCountry.iso_code))).scalars().all()
     )
     blocked_asn_ids = set(
         int(a) for a in (await db.execute(select(BlockedAsn.asn))).scalars().all()
+    )
+    blocked_ip_set = set(
+        (await db.execute(
+            select(BlockedIp.ip).where(
+                or_(BlockedIp.expires_at.is_(None), BlockedIp.expires_at > _now)
+            )
+        )).scalars().all()
     )
     name_by_iso = dict(security_countries.list_countries())
     # return_to preserva i filtri correnti quando l'admin clicca "Blocca …"
@@ -1221,6 +1341,7 @@ async def security_events_list(
             },
             "blocked_countries_iso": blocked_countries_iso,
             "blocked_asn_ids": blocked_asn_ids,
+            "blocked_ip_set": blocked_ip_set,
             "name_by_iso": name_by_iso,
             "return_to": return_to,
         },

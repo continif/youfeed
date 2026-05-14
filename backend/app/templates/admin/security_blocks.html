@@ -81,6 +81,85 @@
     </table>
 </div>
 
+<div class="ya-card">
+    <h2>IP bloccati ({{ ips|length }})</h2>
+    <p class="small">
+        L'auto-ban da scanner-path (vedi <code class="ya-inline">scanner_paths.py</code>:
+        <code class="ya-inline">.env</code>, <code class="ya-inline">wp-login.php</code>,
+        <code class="ya-inline">phpmyadmin</code>, ecc.) crea righe con <code class="ya-inline">expires_at = now + 24h</code>.
+        Aggiungere a mano un IP con <strong>hours vuoto</strong> = ban permanente.
+    </p>
+    <form action="/yf_admin/security/blocks/ips" method="post" class="ya-filters">
+        <input type="text" name="ip" placeholder="IP (es. 1.2.3.4)" required style="width:14em">
+        <input type="number" name="hours" placeholder="hours (vuoto=∞)" min="1" max="8760" style="width:10em">
+        <input type="text" name="note" placeholder="Nota (opzionale)" style="flex: 1; min-width: 220px">
+        <button type="submit">Aggiungi</button>
+    </form>
+    <table class="ya-table">
+        <thead><tr><th>IP</th><th>Scadenza</th><th>Nota</th><th>Aggiunto</th><th>Azione</th></tr></thead>
+        <tbody>
+            {% for i in ips %}
+            <tr>
+                <td><code class="ya-inline">{{ i.ip }}</code></td>
+                <td class="small">
+                    {% if i.expires_at %}
+                        {{ i.expires_at.strftime('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                        <span class="ya-badge ya-badge-danger">permanente</span>
+                    {% endif %}
+                </td>
+                <td>{{ i.note or '—' }}</td>
+                <td class="small">{{ i.created_at.strftime('%Y-%m-%d %H:%M') if i.created_at else '—' }}</td>
+                <td>
+                    <form method="post" action="/yf_admin/security/blocks/ips/{{ i.ip }}/delete"
+                          onsubmit="return confirm('Rimuovere il blocco su {{ i.ip }}?');" style="display:inline">
+                        <button class="ya-btn ya-btn-danger" type="submit">Sblocca</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="small">Nessun IP bloccato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>User-Agent bloccati ({{ uas|length }})</h2>
+    <p class="small">
+        Match <strong>substring case-insensitive</strong>: il pattern viene cercato
+        nell'header <code class="ya-inline">User-Agent</code> della richiesta.
+        Esempi utili: <code class="ya-inline">curl/</code>, <code class="ya-inline">python-requests</code>,
+        <code class="ya-inline">Go-http-client</code>, <code class="ya-inline">scrapy</code>.
+    </p>
+    <form action="/yf_admin/security/blocks/uas" method="post" class="ya-filters">
+        <input type="text" name="pattern" placeholder="Pattern substring (es. scrapy)" minlength="3" maxlength="200" required style="flex: 1; min-width: 280px">
+        <input type="text" name="note" placeholder="Nota (opzionale)" style="flex: 1; min-width: 220px">
+        <button type="submit">Aggiungi</button>
+    </form>
+    <table class="ya-table">
+        <thead><tr><th>Pattern</th><th>Nota</th><th>Aggiunto</th><th>Azione</th></tr></thead>
+        <tbody>
+            {% for u in uas %}
+            <tr>
+                <td><code class="ya-inline">{{ u.pattern }}</code></td>
+                <td>{{ u.note or '—' }}</td>
+                <td class="small">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—' }}</td>
+                <td>
+                    <form method="post" action="/yf_admin/security/blocks/uas/delete"
+                          onsubmit="return confirm('Rimuovere il blocco sul pattern UA?');" style="display:inline">
+                        <input type="hidden" name="pattern" value="{{ u.pattern }}">
+                        <button class="ya-btn ya-btn-danger" type="submit">Sblocca</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="small">Nessun pattern UA bloccato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 <p>
     <a href="/yf_admin/security/events">→ Vai agli eventi di blocco recenti</a> ·
     <a href="/yf_admin/security/stats">→ Aggregati top country/ASN/IP</a>

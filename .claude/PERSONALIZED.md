@@ -107,6 +107,54 @@ La rollup query estrae lo shared_topics dal metadata e applica il bonus.
 
 ## Architettura
 
+### Segnali espliciti — bypass parziale del decay
+
+Ci sono due signal che l'utente ci ha dato **esplicitamente**, non
+inferiti da comportamento: i bookmark (articoli salvati) e gli alert
+(topic per cui vuole notifiche). Hanno regole diverse dai signal
+comportamentali:
+
+**Bookmark = "voglio rileggerlo"**
+
+Un bookmark vive nel DB (`article_bookmarks`) ed è una dichiarazione
+forte: "questo mi interessa abbastanza da rivolerlo ritrovare". Va
+trattato in due punti dello scoring:
+
+1. **Evento `bookmark` (+3.0)** — come oggi, contribuisce come evento e
+   decade con half-life. Misura "ti è piaciuto ALLORA".
+2. **Contributo permanente** — separatamente, ogni bookmark attivo
+   aggiunge **+2.0 a ciascun topic dell'articolo salvato**, con
+   half-life 90g (molto lenta), aggiornato direttamente da
+   `article_bookmarks` JOIN `article_topics`. Misura "ti interessa
+   ANCORA". Se l'utente toglie il bookmark, il contributo sparisce.
+
+**Alert = "ping me whenever this topic appears"**
+
+Le `alert_topics(alert_id, topic_id)` sono il segnale più esplicito
+possibile: l'utente ha PUNTUALMENTE dichiarato "mi interessa il topic X".
+Sarebbe assurdo non darle un peso massimo nel ranker.
+
+- Ogni topic in `alert_topics` (via `alerts.user_id`) ottiene un
+  **boost fisso di +5.0** sull'affinity di quell'utente per quel topic.
+- **NESSUN decay**: finché l'alert esiste, l'affinity resta alta.
+- Se l'utente cancella l'alert, il boost sparisce alla prossima rollup.
+
+Esempio concreto: utente con alert su `{OpenAI, AI}` e nessun click
+in 2 settimane. Senza questi signal, l'affinity decadrebbe a ~zero
+(half-life 30g, ma 14g di silenzio bastano a smorzare). Col boost
+fisso da alert, `user_topic_affinity` ha `OpenAI=5.0, AI=5.0` come
+floor → questi topic continuano a salire in cima al feed.
+
+**Tabella riassuntiva delle sorgenti di score**:
+
+| Sorgente            | Decay                    | Magnitudo tipica |
+|---------------------|--------------------------|------------------|
+| Eventi lettura      | Half-life per topic.type | 0.1..3.0/evento  |
+| Bookmark (evento)   | Half-life come sopra     | +3.0             |
+| Bookmark (esistenza)| Half-life 90g sui topic  | +2.0/bookmark    |
+| Alert su topic      | Nessuno (finché esiste)  | **+5.0 fisso**   |
+| Sources sottoscritte (Phase 4 v2) | TBD        | TBD              |
+
 ### Decay e "scadenza" delle preferenze
 
 > *"Quello che mi piace leggere oggi tra un mese potrebbe non
@@ -252,20 +300,57 @@ weighted AS (
     JOIN article_topics at ON at.article_id = ew.article_id
     JOIN topics t ON t.id = at.topic_id
 )
--- Step 3: aggregazione + TF-IDF-ish + normalizzazione
+-- Step 3a: contributi da bookmark esistenti (separati dagli eventi
+-- per applicare half-life 90g invece di quello per topic.type)
+explicit_bookmark AS (
+    SELECT
+        b.user_id,
+        at.topic_id,
+        SUM(
+            2.0 * EXP(-EXTRACT(EPOCH FROM now() - b.created_at) / (90 * 86400))
+        ) AS w,
+        MAX(b.created_at) AS last_seen
+    FROM article_bookmarks b
+    JOIN article_topics at ON at.article_id = b.article_id
+    GROUP BY b.user_id, at.topic_id
+),
+-- Step 3b: boost fisso da alert (no decay finché l'alert esiste)
+explicit_alert AS (
+    SELECT
+        a.user_id,
+        at.topic_id,
+        5.0 AS w,
+        now() AS last_seen
+    FROM alerts a
+    JOIN alert_topics at ON at.alert_id = a.id
+),
+-- Step 3c: contributi da eventi (CTE "weighted" sopra)
+event_contrib AS (
+    SELECT user_id, topic_id, SUM(w) AS w, MAX(ts) AS last_seen
+    FROM weighted
+    GROUP BY user_id, topic_id
+),
+-- Step 4: UNION dei tre canali, somma per (user, topic)
+combined AS (
+    SELECT * FROM event_contrib
+    UNION ALL
+    SELECT * FROM explicit_bookmark
+    UNION ALL
+    SELECT * FROM explicit_alert
+)
 INSERT INTO user_topic_affinity (user_id, topic_id, score, last_seen)
 SELECT
-    w.user_id,
-    w.topic_id,
-    SUM(w.w) / LOG(1 + topic_corpus.cnt) AS raw_score,
-    MAX(ts) AS last_seen
-FROM weighted w
+    c.user_id,
+    c.topic_id,
+    SUM(c.w) / LOG(1 + topic_corpus.cnt) AS raw_score,
+    MAX(c.last_seen) AS last_seen
+FROM combined c
 JOIN (
     SELECT topic_id, COUNT(*) AS cnt
     FROM article_topics
     GROUP BY topic_id
-) topic_corpus ON topic_corpus.topic_id = w.topic_id
-GROUP BY w.user_id, w.topic_id, topic_corpus.cnt
+) topic_corpus ON topic_corpus.topic_id = c.topic_id
+GROUP BY c.user_id, c.topic_id, topic_corpus.cnt
 ON CONFLICT (user_id, topic_id) DO UPDATE
 SET score = EXCLUDED.score, last_seen = EXCLUDED.last_seen;
 

@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+{% block title %}Security · Stats{% endblock %}
+{% block content %}
+<h1>Aggregati blocchi · ultimi {{ days }} giorni</h1>
+
+<form class="ya-filters" method="get">
+    <label>days
+        <input type="number" name="days" value="{{ days }}" min="1" max="90" style="width:5em">
+    </label>
+    <button type="submit">Aggiorna</button>
+</form>
+
+<p class="small">Totale eventi nella finestra: <strong>{{ total }}</strong></p>
+
+<div class="ya-card">
+    <h2>Top country</h2>
+    <table class="ya-table">
+        <thead><tr><th>Country</th><th class="num">Hits</th></tr></thead>
+        <tbody>
+            {% for r in top_countries %}
+            <tr><td>{{ r.value or '—' }}</td><td class="num">{{ r.count }}</td></tr>
+            {% else %}
+            <tr><td colspan="2" class="small">Nessun dato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>Top ASN</h2>
+    <table class="ya-table">
+        <thead><tr><th>ASN</th><th class="num">Hits</th></tr></thead>
+        <tbody>
+            {% for r in top_asns %}
+            <tr><td>{% if r.value %}AS{{ r.value }}{% else %}—{% endif %}</td><td class="num">{{ r.count }}</td></tr>
+            {% else %}
+            <tr><td colspan="2" class="small">Nessun dato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>Top IP (single hitter)</h2>
+    <table class="ya-table">
+        <thead><tr><th>IP</th><th class="num">Hits</th></tr></thead>
+        <tbody>
+            {% for r in top_ips %}
+            <tr><td><code class="ya-inline">{{ r.value or '—' }}</code></td><td class="num">{{ r.count }}</td></tr>
+            {% else %}
+            <tr><td colspan="2" class="small">Nessun dato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>Top path</h2>
+    <table class="ya-table">
+        <thead><tr><th>Path</th><th class="num">Hits</th></tr></thead>
+        <tbody>
+            {% for r in top_paths %}
+            <tr><td class="small">{{ r.value or '—' }}</td><td class="num">{{ r.count }}</td></tr>
+            {% else %}
+            <tr><td colspan="2" class="small">Nessun dato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p><a href="/yf_admin/security/blocks">← Gestione blocchi</a> · <a href="/yf_admin/security/events">Eventi recenti →</a></p>
+{% endblock %}

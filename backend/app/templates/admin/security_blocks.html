@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block title %}Security · Blocchi{% endblock %}
+{% block content %}
+<h1>Blocchi country / ASN</h1>
+<p class="small">
+    Le richieste che arrivano da uno di questi country o ASN ricevono <strong>403</strong>
+    dal <code class="ya-inline">TrafficBlockMiddleware</code>. La cache si refresha
+    automaticamente entro 60s, e qui ad ogni save invalida subito.
+    Recovery se ti chiudi fuori: <code class="ya-inline">psql -c "DELETE FROM blocked_countries WHERE iso_code='IT';"</code>.
+</p>
+
+<div class="ya-card">
+    <h2>Country bloccati ({{ countries|length }})</h2>
+    <form action="/yf_admin/security/blocks/countries" method="post" class="ya-filters">
+        <input type="text" name="iso_code" placeholder="ISO-2 (es. RU)" maxlength="2" required style="width:6em; text-transform: uppercase">
+        <input type="text" name="note" placeholder="Nota (opzionale)" style="flex: 1; min-width: 220px">
+        <button type="submit">Aggiungi</button>
+    </form>
+    <table class="ya-table">
+        <thead><tr><th>ISO</th><th>Nota</th><th>Aggiunto</th><th>Azione</th></tr></thead>
+        <tbody>
+            {% for c in countries %}
+            <tr>
+                <td><strong>{{ c.iso_code }}</strong></td>
+                <td>{{ c.note or '—' }}</td>
+                <td class="small">{{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '—' }}</td>
+                <td>
+                    <form method="post" action="/yf_admin/security/blocks/countries/{{ c.iso_code }}/delete"
+                          onsubmit="return confirm('Rimuovere il blocco su {{ c.iso_code }}?');" style="display:inline">
+                        <button class="ya-btn ya-btn-danger" type="submit">Sblocca</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="small">Nessun country bloccato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ya-card">
+    <h2>ASN bloccati ({{ asns|length }})</h2>
+    <form action="/yf_admin/security/blocks/asns" method="post" class="ya-filters">
+        <input type="number" name="asn" placeholder="ASN (es. 14061)" min="1" required style="width:8em">
+        <input type="text" name="note" placeholder="Nota (opzionale)" style="flex: 1; min-width: 220px">
+        <button type="submit">Aggiungi</button>
+    </form>
+    <table class="ya-table">
+        <thead><tr><th>ASN</th><th>Nota</th><th>Aggiunto</th><th>Azione</th></tr></thead>
+        <tbody>
+            {% for a in asns %}
+            <tr>
+                <td><strong>AS{{ a.asn }}</strong></td>
+                <td>{{ a.note or '—' }}</td>
+                <td class="small">{{ a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at else '—' }}</td>
+                <td>
+                    <form method="post" action="/yf_admin/security/blocks/asns/{{ a.asn }}/delete"
+                          onsubmit="return confirm('Rimuovere il blocco su AS{{ a.asn }}?');" style="display:inline">
+                        <button class="ya-btn ya-btn-danger" type="submit">Sblocca</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="small">Nessun ASN bloccato.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p>
+    <a href="/yf_admin/security/events">→ Vai agli eventi di blocco recenti</a> ·
+    <a href="/yf_admin/security/stats">→ Aggregati top country/ASN/IP</a>
+</p>
+{% endblock %}

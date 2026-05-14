@@ -26,6 +26,14 @@
         <a href="/yf_admin/sources">Sources</a>
         <a href="/yf_admin/featured">Featured</a>
         <a href="/yf_admin/stats">Stats</a>
+        <div class="ya-dropdown">
+            <button type="button" class="ya-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Security ▾</button>
+            <div class="ya-dropdown-menu" role="menu">
+                <a href="/yf_admin/security/blocks">Blocchi country/ASN</a>
+                <a href="/yf_admin/security/events">Eventi recenti</a>
+                <a href="/yf_admin/security/stats">Aggregati</a>
+            </div>
+        </div>
         <form action="/yf_admin/articles" method="get" class="ya-quick">
             <input type="number" name="article_id" placeholder="ID articolo" required>
             <button type="submit">→</button>

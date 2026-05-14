@@ -88,6 +88,12 @@ class Settings(BaseSettings):
     maxmind_db_dir: Path = Path("./data/maxmind")
     maxmind_license_key: str = ""
 
+    # ---- Security: blocco country/ASN ----
+    # SQLite append-only per gli eventi 403 (vedi .claude/SECURITY.md).
+    # In prod conviene puntare a /var/lib/youfeed/security.db (ReadWritePath
+    # del systemd unit). In dev resta locale al repo.
+    security_db_path: Path = Path("./data/security.db")
+
     # ---- Storage immagini ----
     images_dir: Path = Path("./data/images")
     images_public_prefix: str = "/images"

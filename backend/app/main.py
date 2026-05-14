@@ -20,7 +20,9 @@ from app.middleware.activity_log import ActivityLogMiddleware
 from app.middleware.csrf import CSRFMiddleware
 from app.middleware.geoip import GeoIPMiddleware
 from app.middleware.ratelimit import RateLimitMiddleware
+from app.middleware.traffic_block import TrafficBlockMiddleware
 from app.redis_client import dispose_redis
+from app.security import events_store as security_events_store
 from app.routers import (
     admin,
     articles,
@@ -46,7 +48,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Init + cleanup risorse condivise."""
     setup_logging()
     log = structlog.get_logger()
-    log.info("yf.startup", version=__version__, env=get_settings().yf_env)
+    settings = get_settings()
+    log.info("yf.startup", version=__version__, env=settings.yf_env)
+    # SQLite event-store per i 403 del TrafficBlockMiddleware.
+    security_events_store.init_store(settings.security_db_path)
     try:
         yield
     finally:
@@ -72,11 +77,12 @@ def create_app() -> FastAPI:
 
     # Middleware. Ordine entry: ultimo aggiunto = outermost = primo a vedere
     # la richiesta. Per noi serve:
-    #   GeoIP → RateLimit → CSRF → ActivityLog → handler
+    #   GeoIP → TrafficBlock → RateLimit → CSRF → ActivityLog → handler
     # quindi aggiungiamo nell'ordine inverso (innermost first):
     app.add_middleware(ActivityLogMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(TrafficBlockMiddleware)
     app.add_middleware(GeoIPMiddleware)
 
     # Routers

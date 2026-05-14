@@ -46,6 +46,8 @@ from app.models import (
     Article,
     ArticleTopic,
     AuthSession,
+    BlockedAsn,
+    BlockedCountry,
     Entity,
     FeaturedSource,
     Source,
@@ -54,6 +56,8 @@ from app.models import (
     TopicTermRule,
     User,
 )
+from app.db import get_session_factory
+from app.security import block_cache, events_store as security_events_store
 
 log = structlog.get_logger()
 
@@ -72,6 +76,21 @@ def _asset_version(rel_path: str) -> str:
 
 
 _templates.env.globals["asset_version"] = _asset_version
+
+
+def _format_unix_ts(ts: int | float | None) -> str:
+    """Filtro Jinja per formattare timestamp Unix (es. eventi SQLite block_events)."""
+    if ts is None:
+        return "—"
+    from datetime import datetime as _dt
+    from datetime import timezone as _tz
+    try:
+        return _dt.fromtimestamp(float(ts), tz=_tz.utc).strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, OSError):
+        return str(ts)
+
+
+_templates.env.filters["datetime"] = _format_unix_ts
 
 
 router = APIRouter(
@@ -1018,6 +1037,156 @@ async def cache_reload() -> Response:
     classify.invalidate_classifier_cache()
     log.info("yf.admin.cache_reload")
     return RedirectResponse(url="/yf_admin/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------------------------------------------------------------------------
+# Security: blocked countries + ASN + event log
+# ---------------------------------------------------------------------------
+
+
+@router.get("/security/blocks")
+async def security_blocks_list(request: Request, db: DB) -> Response:
+    """Liste blocked_countries + blocked_asns + form di aggiunta inline."""
+    countries = (
+        await db.execute(select(BlockedCountry).order_by(BlockedCountry.iso_code))
+    ).scalars().all()
+    asns = (
+        await db.execute(select(BlockedAsn).order_by(BlockedAsn.asn))
+    ).scalars().all()
+    return _templates.TemplateResponse(
+        request,
+        "admin/security_blocks.html",
+        {"countries": list(countries), "asns": list(asns)},
+    )
+
+
+@router.post("/security/blocks/countries")
+async def security_block_country_add(
+    db: DB,
+    iso_code: str = Form(...),
+    note: str = Form(default=""),
+) -> Response:
+    iso = iso_code.strip().upper()
+    if len(iso) != 2 or not iso.isalpha():
+        raise HTTPException(status_code=400, detail="iso_code deve essere 2 lettere")
+    stmt = pg_insert(BlockedCountry).values(iso_code=iso, note=note.strip() or None)
+    stmt = stmt.on_conflict_do_nothing(index_elements=["iso_code"])
+    await db.execute(stmt)
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.country_blocked", iso_code=iso)
+    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/security/blocks/countries/{iso_code}/delete")
+async def security_block_country_delete(db: DB, iso_code: str) -> Response:
+    iso = iso_code.strip().upper()
+    await db.execute(delete(BlockedCountry).where(BlockedCountry.iso_code == iso))
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.country_unblocked", iso_code=iso)
+    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/security/blocks/asns")
+async def security_block_asn_add(
+    db: DB,
+    asn: int = Form(...),
+    note: str = Form(default=""),
+) -> Response:
+    if asn <= 0:
+        raise HTTPException(status_code=400, detail="asn deve essere > 0")
+    stmt = pg_insert(BlockedAsn).values(asn=asn, note=note.strip() or None)
+    stmt = stmt.on_conflict_do_nothing(index_elements=["asn"])
+    await db.execute(stmt)
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.asn_blocked", asn=asn)
+    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/security/blocks/asns/{asn}/delete")
+async def security_block_asn_delete(db: DB, asn: int) -> Response:
+    await db.execute(delete(BlockedAsn).where(BlockedAsn.asn == asn))
+    await db.commit()
+    await block_cache.invalidate(get_session_factory())
+    log.info("yf.admin.security.asn_unblocked", asn=asn)
+    return RedirectResponse(url="/yf_admin/security/blocks", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/security/events")
+async def security_events_list(
+    request: Request,
+    country: str = Query(default=""),
+    asn: int | None = Query(default=None),
+    ip: str = Query(default=""),
+    reason: str = Query(default=""),
+    hours: int = Query(default=24, ge=1, le=720),
+    limit: int = Query(default=200, ge=1, le=1000),
+) -> Response:
+    """Eventi 403 recenti, filtrabili. Finestra temporale in ore."""
+    import time as _time
+    since_ts = int(_time.time()) - hours * 3600
+    events = await security_events_store.list_events(
+        country=country.strip().upper() or None,
+        asn=asn,
+        ip=ip.strip() or None,
+        reason=reason.strip() or None,
+        since_ts=since_ts,
+        limit=limit,
+    )
+    total = await security_events_store.total_count(since_ts)
+    return _templates.TemplateResponse(
+        request,
+        "admin/security_events.html",
+        {
+            "events": events,
+            "total": total,
+            "filters": {
+                "country": country,
+                "asn": asn,
+                "ip": ip,
+                "reason": reason,
+                "hours": hours,
+                "limit": limit,
+            },
+        },
+    )
+
+
+@router.get("/security/stats")
+async def security_stats(
+    request: Request,
+    days: int = Query(default=7, ge=1, le=90),
+) -> Response:
+    """Aggregati top-N per country/ASN/IP/path negli ultimi N giorni."""
+    import time as _time
+    since_ts = int(_time.time()) - days * 86400
+    top_countries = await security_events_store.aggregate(
+        group_by="country", since_ts=since_ts, limit=20
+    )
+    top_asns = await security_events_store.aggregate(
+        group_by="asn", since_ts=since_ts, limit=20
+    )
+    top_ips = await security_events_store.aggregate(
+        group_by="ip", since_ts=since_ts, limit=20
+    )
+    top_paths = await security_events_store.aggregate(
+        group_by="path", since_ts=since_ts, limit=20
+    )
+    total = await security_events_store.total_count(since_ts)
+    return _templates.TemplateResponse(
+        request,
+        "admin/security_stats.html",
+        {
+            "days": days,
+            "total": total,
+            "top_countries": top_countries,
+            "top_asns": top_asns,
+            "top_ips": top_ips,
+            "top_paths": top_paths,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

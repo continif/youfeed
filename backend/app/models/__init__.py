@@ -7,6 +7,7 @@ from .base import Base, TimestampMixin
 from .bookmarks import ArticleBookmark
 from .notifications import Notification
 from .push import PushSubscription
+from .security import BlockedAsn, BlockedCountry
 from .knowledge import (
     ArticleEntity,
     ArticleTopic,
@@ -52,4 +53,6 @@ __all__ = [
     "AlertTopic",
     "PushSubscription",
     "ArticleBookmark",
+    "BlockedCountry",
+    "BlockedAsn",
 ]

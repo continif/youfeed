@@ -3,6 +3,28 @@
     <h1 class="text-2xl font-semibold mb-6">Aspetto</h1>
 
     <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
+      <h2 class="font-semibold mb-2">Immagini nelle anteprime</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Se preferisci una lettura più asciutta o sei su una connessione lenta,
+        puoi nascondere le foto sulle card del feed. Le immagini restano visibili
+        sulla pagina di dettaglio dell'articolo. La scelta è salvata solo nel tuo
+        browser (localStorage).
+      </p>
+      <label class="flex items-center gap-3 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          class="h-5 w-5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+          :checked="showImages"
+          @change="onToggleImages"
+        />
+        <span class="text-sm">
+          Mostra immagini nelle anteprime
+          <strong class="ml-1">({{ showImages ? "attive" : "nascoste" }})</strong>
+        </span>
+      </label>
+    </section>
+
+    <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
       <h2 class="font-semibold mb-2">Colore di sfondo</h2>
       <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
         Sovrascrive il colore di sfondo del tema chiaro/scuro. La preferenza è
@@ -67,9 +89,15 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useBackgroundColor } from "@/composables/useBackgroundColor";
+import { useDisplayPrefs } from "@/composables/useDisplayPrefs";
 
 const { color, setColor, reset } = useBackgroundColor();
+const { showImages, setShowImages } = useDisplayPrefs();
 const invalid = ref(false);
+
+function onToggleImages(e: Event) {
+  setShowImages((e.target as HTMLInputElement).checked);
+}
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 

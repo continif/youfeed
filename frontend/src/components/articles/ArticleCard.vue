@@ -64,8 +64,15 @@
         <RouterLink
           :to="`/me/article/${item.id}`"
           class="flex-1 hover:text-blue-600 dark:hover:text-blue-400"
+          @click="onPreviewOpen"
           >{{ item.title }}</RouterLink
         >
+        <ShareButton
+          v-if="!hasImage"
+          :article-id="item.id"
+          :title="item.title"
+          :url="item.url_canonical"
+        />
         <button
           v-if="!hasImage"
           type="button"
@@ -132,6 +139,7 @@ import { it } from "date-fns/locale";
 import { useAuthStore } from "@/stores/auth";
 import { useBookmarksStore } from "@/stores/bookmarks";
 import { useToastsStore } from "@/stores/toasts";
+import { useDisplayPrefs } from "@/composables/useDisplayPrefs";
 import { trackEvent } from "@/lib/tracking";
 import ShareButton from "@/components/articles/ShareButton.vue";
 import type { ArticleListItem } from "@/types/api";
@@ -141,6 +149,7 @@ const route = useRoute();
 const auth = useAuthStore();
 const bookmarksStore = useBookmarksStore();
 const toasts = useToastsStore();
+const { showImages } = useDisplayPrefs();
 
 const isBookmarked = computed(() => bookmarksStore.isBookmarked(props.item.id));
 
@@ -219,8 +228,14 @@ const cardStyle = computed(() =>
 );
 
 const imageFailed = ref(false);
+// `hasImage` resta gated anche sulla preferenza utente: se l'utente ha
+// disattivato le immagini (Aspetto → Mostra immagini), forziamo il
+// layout senza foto, che è già supportato (titolo+meta+bookmark inline).
 const hasImage = computed(
-  () => !imageFailed.value && !!(props.item.image_local_url || props.item.image_url),
+  () =>
+    showImages.value
+    && !imageFailed.value
+    && !!(props.item.image_local_url || props.item.image_url),
 );
 
 function onImgError() {

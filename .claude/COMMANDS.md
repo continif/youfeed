@@ -79,7 +79,7 @@ alembic upgrade head --sql > /tmp/migration.sql
 ```bash
 # Dalla cartella backend/
 python -m app.utils.seed_loader \
-    --reserved-words ../Claude/reserved-words.txt \
+    --reserved-words ../.claude/reserved-words.txt \
     --topics ../infra/seed/topics.yaml \
     --featured ../infra/seed/featured_sources.yaml
 ```

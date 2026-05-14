@@ -47,7 +47,7 @@ Vantaggio: revoca, scadenza e device management identici per web e mobile.
 - Permette: distinguere device dello stesso utente, riconoscere session theft (cookie usato da altro fingerprint), popolare `/yf_me/devices`
 
 ### Reserved usernames
-- Lista in `Claude/reserved-words.txt` (base iniziale, espandibile)
+- Lista in `.claude/reserved-words.txt` (base iniziale, espandibile)
 - Validata in `POST /yf_auth/register` e `GET /yf_auth/username-available`
 - Nessuna collisione con `/yf_*` perché tutti gli username che iniziano con `yf_` sono riservati di default
 

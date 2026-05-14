@@ -35,7 +35,7 @@ Documenti di riferimento:
 
 ## Phase 0 — Infrastructure & repo setup [✓]
 
-- [✓] Creare struttura repo `youfeed/` con `backend/`, `frontend/`, `infra/`, `docs/` (i Claude/*.md restano)
+- [✓] Creare struttura repo `youfeed/` con `backend/`, `frontend/`, `infra/`, `docs/` (i .claude/*.md restano)
 - [✓] `backend/`: `pyproject.toml` con dipendenze v1.0 + extras `dev`, `v1_1`, `v1_2`
 - [✓] `backend/` tooling: `ruff`, `pyright`, `pytest`, `pytest-asyncio`
 - [✓] `frontend/`: `package.json` con Vue 3, Vite, TS, Pinia, Vue Router, Tailwind, Headless UI, Heroicons, ky, VeeValidate, Zod, date-fns, vue-draggable-plus, colord, driver.js, FingerprintJS, VueUse

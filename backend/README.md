@@ -1,6 +1,6 @@
 # YOUFEED — Backend
 
-FastAPI backend per YOUFEED. Vedi documentazione architetturale completa in [`../Claude/`](../Claude/).
+FastAPI backend per YOUFEED. Vedi documentazione architetturale completa in [`../.claude/`](../.claude/).
 
 ## Quickstart sviluppo
 
@@ -84,7 +84,7 @@ python -m app.utils.seed_loader \
     --municipalities-encoding cp1252
 
 # Altri dataset
-python -m app.utils.seed_loader --reserved-words ../Claude/reserved-words.txt
+python -m app.utils.seed_loader --reserved-words ../.claude/reserved-words.txt
 python -m app.utils.seed_loader --topics ../data/topics/topics.csv
 python -m app.utils.seed_loader --featured ../data/topics/featured.csv
 ```

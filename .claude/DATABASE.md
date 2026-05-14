@@ -85,7 +85,7 @@ password_reset_tokens
   user_id         bigint FK
   expires_at      timestamptz
 
-reserved_usernames                        -- seed da Claude/reserved-words.txt
+reserved_usernames                        -- seed da .claude/reserved-words.txt
   word            citext PK
   reason          text                    -- 'system' | 'profanity' | 'brand' | 'slur'
 ```

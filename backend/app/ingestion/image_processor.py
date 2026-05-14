@@ -1,6 +1,6 @@
 """Image processing: scarica image_url, ricodifica in WebP, salva su disco.
 
-Storage layout (vedi `Claude/DATABASE.md`):
+Storage layout (vedi `.claude/DATABASE.md`):
   IMAGES_DIR/{hash[:2]}/{hash[2:4]}/{hash}_m.webp   # 370px (mobile)
   IMAGES_DIR/{hash[:2]}/{hash[2:4]}/{hash}_d.webp   # 1200px max (desktop)
 

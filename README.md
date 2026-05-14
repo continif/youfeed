@@ -2,7 +2,7 @@
 
 Aggregatore di news personalizzabile, IT-only. Sostituirà l'attuale [youfeed.it](https://www.youfeed.it).
 
-> Documentazione completa: [`Claude/`](Claude/) — design, schema, scope per release, sequenza task operativa.
+> Documentazione completa: [`.claude/`](.claude/) — design, schema, scope per release, sequenza task operativa.
 
 ## Quickstart sviluppo locale
 
@@ -29,23 +29,23 @@ npm run dev   # http://localhost:5173
 
 ```
 youfeed/
-  Claude/             # documentazione di design (architettura, MVP, status, ecc.)
+  .claude/             # documentazione di design (architettura, MVP, status, ecc.)
   backend/            # FastAPI + ingestion + worker
   frontend/           # Vue 3 SPA
   infra/              # systemd, Apache vhost, docker-compose, script
   data/               # stopwords/wordforms IT, MMDB locali (dev), snapshot topics (parquet)
   CLAUDE.md           # descrizione di prodotto
-  STATUS.md → Claude/STATUS.md   # task list operativa
+  STATUS.md → .claude/STATUS.md   # task list operativa
 ```
 
 ## Documentazione di riferimento
 
-- [`Claude/ARCHITECTURE.md`](Claude/ARCHITECTURE.md) — architettura, stack, hosting
-- [`Claude/MVP.md`](Claude/MVP.md) — scope per release (v1.0 → v2.0)
-- [`Claude/STATUS.md`](Claude/STATUS.md) — sequenza task con stato
-- [`Claude/BACKEND.md`](Claude/BACKEND.md), [`INGESTION.md`](Claude/INGESTION.md), [`DATABASE.md`](Claude/DATABASE.md), [`KNOWLEDGE-GRAPH.md`](Claude/KNOWLEDGE-GRAPH.md), [`FRONTEND.md`](Claude/FRONTEND.md) — design tecnico per area
-- [`Claude/COMMANDS.md`](Claude/COMMANDS.md) — cheatsheet comandi quotidiani (dev, test, DB, Apache, deploy)
-- [`Claude/reserved-words.txt`](Claude/reserved-words.txt) — username vietati
+- [`.claude/ARCHITECTURE.md`](.claude/ARCHITECTURE.md) — architettura, stack, hosting
+- [`.claude/MVP.md`](.claude/MVP.md) — scope per release (v1.0 → v2.0)
+- [`.claude/STATUS.md`](.claude/STATUS.md) — sequenza task con stato
+- [`.claude/BACKEND.md`](.claude/BACKEND.md), [`INGESTION.md`](.claude/INGESTION.md), [`DATABASE.md`](.claude/DATABASE.md), [`KNOWLEDGE-GRAPH.md`](.claude/KNOWLEDGE-GRAPH.md), [`FRONTEND.md`](.claude/FRONTEND.md) — design tecnico per area
+- [`.claude/COMMANDS.md`](.claude/COMMANDS.md) — cheatsheet comandi quotidiani (dev, test, DB, Apache, deploy)
+- [`.claude/reserved-words.txt`](.claude/reserved-words.txt) — username vietati
 
 ## Bootstrap dataset
 

@@ -123,7 +123,7 @@ class PasswordResetToken(Base):
 
 
 class ReservedUsername(Base):
-    """Username riservati (lista da `Claude/reserved-words.txt` + prefisso `yf_`)."""
+    """Username riservati (lista da `.claude/reserved-words.txt` + prefisso `yf_`)."""
 
     __tablename__ = "reserved_usernames"
 

@@ -2,7 +2,7 @@
 
 Esempio:
     python -m app.utils.seed_loader \\
-        --reserved-words ../Claude/reserved-words.txt \\
+        --reserved-words ../.claude/reserved-words.txt \\
         --topics ../infra/seed/topics.yaml \\
         --featured ../infra/seed/featured_sources.yaml
 """

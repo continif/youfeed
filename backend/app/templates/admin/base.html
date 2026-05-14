@@ -12,15 +12,20 @@
     <a class="ya-brand" href="/yf_admin/">YouFeed Admin</a>
     <nav class="ya-nav">
         <a href="/yf_admin/users">Utenti</a>
-        <a href="/yf_admin/topics">Topic</a>
-        <a href="/yf_admin/entities">Entità</a>
+        <div class="ya-dropdown">
+            <button type="button" class="ya-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Topic ▾</button>
+            <div class="ya-dropdown-menu" role="menu">
+                <a href="/yf_admin/topics">Lista topic</a>
+                <a href="/yf_admin/entities">Entità non risolte</a>
+                <a href="/yf_admin/rules/ambigui">Ambigui</a>
+                <a href="/yf_admin/rules/blacklist">Blacklist</a>
+                <a href="/yf_admin/rules/case-sensitive">Case-sensitive</a>
+                <a href="/yf_admin/composite">Composite</a>
+            </div>
+        </div>
         <a href="/yf_admin/sources">Sources</a>
         <a href="/yf_admin/featured">Featured</a>
         <a href="/yf_admin/stats">Stats</a>
-        <a href="/yf_admin/rules/ambigui">Ambigui</a>
-        <a href="/yf_admin/rules/blacklist">Blacklist</a>
-        <a href="/yf_admin/rules/case-sensitive">Case-sensitive</a>
-        <a href="/yf_admin/composite">Composite</a>
         <form action="/yf_admin/articles" method="get" class="ya-quick">
             <input type="number" name="article_id" placeholder="ID articolo" required>
             <button type="submit">→</button>

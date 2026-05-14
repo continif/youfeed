@@ -34,7 +34,7 @@ sudo nano /opt/youfeed/.env
 cd /opt/youfeed/backend
 sudo -u youfeed /opt/youfeed/.venv/bin/alembic upgrade head
 sudo -u youfeed /opt/youfeed/.venv/bin/python -m app.utils.seed_loader \
-    --reserved-words ../Claude/reserved-words.txt \
+    --reserved-words ../.claude/reserved-words.txt \
     --topics ../infra/seed/topics.yaml \
     --featured ../infra/seed/featured_sources.yaml
 

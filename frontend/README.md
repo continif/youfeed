@@ -1,6 +1,6 @@
 # YOUFEED — Frontend SPA
 
-Vue 3 + Vite + TypeScript + Pinia + Tailwind. Vedi [`../Claude/FRONTEND.md`](../Claude/FRONTEND.md) per il design completo.
+Vue 3 + Vite + TypeScript + Pinia + Tailwind. Vedi [`../.claude/FRONTEND.md`](../.claude/FRONTEND.md) per il design completo.
 
 ## Quickstart
 

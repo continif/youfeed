@@ -9,7 +9,7 @@ Output: oggetto `DiscoveryResult` con:
   - og: blocco Open Graph del sito (titolo, descrizione, immagine, favicon)
   - reason: stringa human-readable se invalid
 
-Vedi `Claude/INGESTION.md` → "Parte 1 — Elaborazione URL" per la spec.
+Vedi `.claude/INGESTION.md` → "Parte 1 — Elaborazione URL" per la spec.
 
 Niente accesso a DB qui: questa funzione è pura I/O esterno + parsing.
 Il salvataggio in `sources` è responsabilità del router/service.

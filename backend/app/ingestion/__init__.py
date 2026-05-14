@@ -1,6 +1,6 @@
 """Pipeline di ingestion: discovery URL + fetch RSS/WP + normalize + classify.
 
-Vedi `Claude/INGESTION.md` per il design completo.
+Vedi `.claude/INGESTION.md` per il design completo.
   - discovery.py        — qualificazione URL -> kind RSS/WP/invalid
   - feed_parser.py      — fetch RSS/Atom -> ArticleCandidate (puro)
   - wp_api.py           — fetch WordPress REST -> ArticleCandidate (puro)

@@ -37,6 +37,55 @@
       </div>
     </section>
 
+    <!-- SEO della pagina pubblica -->
+    <section
+      v-if="auth.user?.username"
+      class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6"
+    >
+      <h2 class="font-semibold mb-2">SEO della tua pagina pubblica</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Come compari su Google e sulle anteprime social per
+        <code>{{ origin }}/{{ auth.user.username }}</code>. Lascia vuoto per usare un
+        default genericamente descrittivo. I suffissi <em>| YouFeed</em> /
+        <em>Powered by YouFeed</em> vengono aggiunti in automatico.
+      </p>
+      <form class="space-y-4" @submit.prevent="onSaveSeo">
+        <div>
+          <label class="block text-sm font-medium mb-1">Titolo</label>
+          <input
+            v-model="seoTitle"
+            type="text"
+            maxlength="80"
+            placeholder="es. Tech & geopolitica — i miei feed"
+            class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+          />
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {{ seoTitle.length }} / 80 caratteri · resa: <em>{{ seoTitlePreview }}</em>
+          </p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Descrizione</label>
+          <textarea
+            v-model="seoDescription"
+            maxlength="200"
+            rows="3"
+            placeholder="es. Le mie fonti preferite su intelligenza artificiale, cybersecurity e geopolitica europea."
+            class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm resize-y"
+          />
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {{ seoDescription.length }} / 200 caratteri · resa: <em>{{ seoDescriptionPreview }}</em>
+          </p>
+        </div>
+        <button
+          type="submit"
+          :disabled="savingSeo"
+          class="rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 disabled:opacity-50"
+        >
+          {{ savingSeo ? "Salvataggio…" : "Salva SEO" }}
+        </button>
+      </form>
+    </section>
+
     <!-- Change password -->
     <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
       <h2 class="font-semibold mb-3">Cambia password</h2>
@@ -114,7 +163,7 @@ import { useRouter } from "vue-router";
 import { useForm, useField } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import { computed, ref } from "vue";
-import { changePassword, deleteAccount } from "@/services/me";
+import { changePassword, deleteAccount, patchMe } from "@/services/me";
 import { useAuthStore } from "@/stores/auth";
 import { useToastsStore } from "@/stores/toasts";
 import { extractError } from "@/services/api";
@@ -125,11 +174,47 @@ const auth = useAuthStore();
 const toasts = useToastsStore();
 
 // Feed RSS personale
+const origin = window.location.origin;
 const rssUrl = computed(() => {
   const u = auth.user?.username ?? "";
-  return `${window.location.origin}/yf_users/${u}/feed.rss`;
+  return `${origin}/yf_users/${u}/feed.rss`;
 });
 const copied = ref(false);
+
+// SEO pagina pubblica
+const seoTitle = ref(auth.user?.profile_seo_title ?? "");
+const seoDescription = ref(auth.user?.profile_seo_description ?? "");
+const savingSeo = ref(false);
+
+const seoTitlePreview = computed(() => {
+  const t = seoTitle.value.trim();
+  return t
+    ? `${t} | YouFeed`
+    : `Il feed RSS pubblico di ${auth.user?.username ?? "te"} | YouFeed`;
+});
+const seoDescriptionPreview = computed(() => {
+  const d = seoDescription.value.trim();
+  return d
+    ? `${d} Powered by YouFeed.`
+    : `Il feed RSS pubblico di ${auth.user?.username ?? "te"} grazie a YouFeed. Registrati per averne uno anche tu!`;
+});
+
+async function onSaveSeo() {
+  savingSeo.value = true;
+  try {
+    const updated = await patchMe({
+      profile_seo_title: seoTitle.value.trim(),
+      profile_seo_description: seoDescription.value.trim(),
+    });
+    auth.user = updated;
+    toasts.success("SEO aggiornato.");
+  } catch (err) {
+    const apiErr = await extractError(err);
+    toasts.error(apiErr?.message ?? "Impossibile salvare il SEO.");
+  } finally {
+    savingSeo.value = false;
+  }
+}
 
 function onRssFocus(e: FocusEvent) {
   (e.target as HTMLInputElement | null)?.select();

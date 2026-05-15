@@ -192,10 +192,13 @@ async def profile(
         "public/profile.html",
         {
             "profile_username": user.username,
+            "profile_seo_title": user.profile_seo_title,
+            "profile_seo_description": user.profile_seo_description,
             "items": items,
             "next_cursor": next_cursor,
             "source_count": source_count,
             "canonical_url": canonical,
+            "site_url": settings.yf_public_base_url.rstrip("/"),
         },
     )
 

@@ -37,6 +37,10 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
     google_sub: Mapped[str | None] = mapped_column(Text, nullable=True, unique=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # SEO custom della pagina pubblica /{username}: NULL = default catchy.
+    # 80 / 200 char lasciano spazio per " | YouFeed" / " Powered by YouFeed".
+    profile_seo_title: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    profile_seo_description: Mapped[str | None] = mapped_column(String(200), nullable=True)
     onboarding_completed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

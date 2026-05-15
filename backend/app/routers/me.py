@@ -50,12 +50,20 @@ async def get_me(user: CurrentUser) -> UserOut:
 
 @router.patch("", response_model=UserOut)
 async def patch_me(payload: MePatchIn, user: CurrentUser, db: DB) -> UserOut:
-    """Patch parziale dell'utente loggato. Per ora supporta solo
-    `onboarding_completed`."""
+    """Patch parziale dell'utente loggato."""
     if payload.onboarding_completed is not None:
         await account_service.set_onboarding_completed(
             db, user=user, completed=payload.onboarding_completed
         )
+    # SEO custom della pagina pubblica: stringa vuota = reset al default.
+    # `model_fields_set` distingue "campo assente" da "campo = None/''".
+    fields_set = payload.model_fields_set
+    if "profile_seo_title" in fields_set:
+        v = (payload.profile_seo_title or "").strip()
+        user.profile_seo_title = v or None
+    if "profile_seo_description" in fields_set:
+        v = (payload.profile_seo_description or "").strip()
+        user.profile_seo_description = v or None
     await db.commit()
     await db.refresh(user)
     log.info(

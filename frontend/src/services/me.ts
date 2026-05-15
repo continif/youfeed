@@ -1,7 +1,14 @@
 import { api } from "@/services/api";
 import type { DeviceOut, MessageOut, UserOut } from "@/types/api";
 
-export async function patchMe(patch: { onboarding_completed?: boolean }): Promise<UserOut> {
+export interface MePatch {
+  onboarding_completed?: boolean;
+  // Stringa vuota = reset al default (catchy markettaro)
+  profile_seo_title?: string | null;
+  profile_seo_description?: string | null;
+}
+
+export async function patchMe(patch: MePatch): Promise<UserOut> {
   return api.patch("yf_me", { json: patch }).json<UserOut>();
 }
 

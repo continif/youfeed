@@ -1,7 +1,15 @@
 {% extends "public/base.html" %}
 
-{% block title %}{{ profile_username }} — YouFeed{% endblock %}
-{% block description %}Feed pubblico di {{ profile_username }} su YouFeed: notizie aggregate da {{ source_count }} fonti italiane.{% endblock %}
+{# Default catchy se l'utente non ha customizzato il SEO (vedi
+   Impostazioni → Account). I custom hanno suffisso fisso per riconoscibilità
+   del brand nelle SERP. #}
+{% set _default_title = "Il feed RSS pubblico di " ~ profile_username ~ " | YouFeed" %}
+{% set _default_description = "Il feed RSS pubblico di " ~ profile_username ~ " grazie a YouFeed: notizie aggregate da " ~ source_count ~ " fonti italiane. Registrati per averne uno anche tu!" %}
+{% set _page_title = (profile_seo_title ~ " | YouFeed") if profile_seo_title else _default_title %}
+{% set _page_description = (profile_seo_description ~ " Powered by YouFeed.") if profile_seo_description else _default_description %}
+
+{% block title %}{{ _page_title }}{% endblock %}
+{% block description %}{{ _page_description }}{% endblock %}
 {% block rss_href %}/yf_users/{{ profile_username }}/feed.rss{% endblock %}
 
 {% block og %}
@@ -15,15 +23,21 @@
 {% endif %}
 {% endblock %}
 
-{% block jsonld %}
+{% block extra_head %}
+<meta name="robots" content="index, follow, max-image-preview:large">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": {{ profile_username | tojson }},
-  "description": "Feed pubblico di {{ profile_username }} su YouFeed",
+  "name": {{ _page_title | tojson }},
+  "description": {{ _page_description | tojson }},
   "url": {{ canonical_url | tojson if canonical_url else '""' | safe }},
-  "inLanguage": "it",
+  "inLanguage": "it-IT",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "YouFeed",
+    "url": "{{ site_url }}/"
+  },
   {% if items %}
   "mainEntity": {
     "@type": "ItemList",

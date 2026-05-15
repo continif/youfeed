@@ -6,6 +6,8 @@ export interface UserOut {
   email: string;
   email_verified: boolean;
   onboarding_completed_at: string | null;
+  profile_seo_title: string | null;
+  profile_seo_description: string | null;
   created_at: string;
 }
 

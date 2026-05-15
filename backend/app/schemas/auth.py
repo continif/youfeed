@@ -39,9 +39,15 @@ class ResetPasswordIn(BaseModel):
 
 class MePatchIn(BaseModel):
     """Patch parziale per `/yf_me`. Setta `onboarding_completed_at = NOW()`
-    se True, NULL se False (utile per test/admin)."""
+    se True, NULL se False (utile per test/admin).
+
+    `profile_seo_*`: SEO custom della pagina pubblica `/{username}`.
+    Stringa vuota → reset al default (catchy markettaro).
+    """
 
     onboarding_completed: bool | None = None
+    profile_seo_title: str | None = Field(default=None, max_length=80)
+    profile_seo_description: str | None = Field(default=None, max_length=200)
 
 
 class UserOut(BaseModel):
@@ -54,6 +60,8 @@ class UserOut(BaseModel):
     email: EmailStr
     email_verified: bool
     onboarding_completed_at: datetime | None
+    profile_seo_title: str | None = None
+    profile_seo_description: str | None = None
     created_at: datetime
 
 

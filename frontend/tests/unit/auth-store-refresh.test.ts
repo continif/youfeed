@@ -22,6 +22,8 @@ const FAKE_USER = {
   email: "drtarr@drtarr.it",
   email_verified: true,
   onboarding_completed_at: null as string | null,
+  profile_seo_title: null as string | null,
+  profile_seo_description: null as string | null,
   created_at: "2026-05-06T10:00:00Z",
 };
 

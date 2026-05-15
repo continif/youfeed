@@ -1,17 +1,63 @@
 {% extends "public/base.html" %}
 
-{% block title %}YouFeed — il tuo aggregatore di news italiano{% endblock %}
-{% block description %}Crea il tuo feed personalizzato di notizie italiane: scegli i siti, organizza per categorie, esporta come RSS. Gratuito e senza profilazione.{% endblock %}
+{% block title %}YouFeed — Aggregatore di news RSS italiano{% endblock %}
+{% block description %}Aggrega i feed RSS dei siti italiani che leggi, organizza per categorie, condividi il feed e ricevi alert sui temi. Gratis, senza algoritmi né profilazione.{% endblock %}
 
 {% block og %}
 {{ super() }}
-{% if items and items[0].image_local_url %}
-<meta property="og:image" content="{{ items[0].image_local_url }}">
-<meta name="twitter:image" content="{{ items[0].image_local_url }}">
-{% elif items and items[0].image_url %}
-<meta property="og:image" content="{{ items[0].image_url }}">
-<meta name="twitter:image" content="{{ items[0].image_url }}">
-{% endif %}
+{# og:image: prima l'immagine dell'articolo in vetrina, fallback sul logo PWA #}
+{% set og_image = (items[0].image_local_url if items and items[0].image_local_url else
+                   items[0].image_url if items and items[0].image_url else
+                   site_url + '/android-chrome-512x512.png') %}
+<meta property="og:image" content="{{ og_image }}">
+<meta name="twitter:image" content="{{ og_image }}">
+<meta property="og:image:alt" content="YouFeed — aggregatore di news italiano">
+<meta property="article:publisher" content="https://www.youfeed.it">
+{% endblock %}
+
+{% block extra_head %}
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="YouFeed">
+<meta name="keywords" content="aggregatore news, feed RSS italiano, lettore RSS, notizie italiane, aggregatore RSS, news reader">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{ site_url }}/#organization",
+      "name": "YouFeed",
+      "url": "{{ site_url }}/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ site_url }}/android-chrome-512x512.png",
+        "width": 512,
+        "height": 512
+      },
+      "description": "Aggregatore di news italiano: scegli le tue fonti RSS, organizza in categorie, niente algoritmo opaco.",
+      "email": "info@youfeed.it"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ site_url }}/#website",
+      "url": "{{ site_url }}/",
+      "name": "YouFeed",
+      "description": "Aggregatore di news RSS italiano, senza profilazione.",
+      "publisher": { "@id": "{{ site_url }}/#organization" },
+      "inLanguage": "it-IT"
+    },
+    {
+      "@type": "WebPage",
+      "@id": "{{ site_url }}/#webpage",
+      "url": "{{ site_url }}/",
+      "name": "YouFeed — Aggregatore di news RSS italiano",
+      "isPartOf": { "@id": "{{ site_url }}/#website" },
+      "about": { "@id": "{{ site_url }}/#organization" },
+      "inLanguage": "it-IT"
+    }
+  ]
+}
+</script>
 {% endblock %}
 
 {% block content %}

@@ -92,12 +92,14 @@ async def home(
 
     items = await _home_articles(db, redis)
     settings = get_settings()
+    site_url = settings.yf_public_base_url.rstrip("/")
     return _templates.TemplateResponse(
         request,
         "public/home.html",
         {
             "items": items,
-            "canonical_url": settings.yf_public_base_url.rstrip("/") + "/",
+            "canonical_url": site_url + "/",
+            "site_url": site_url,
         },
     )
 

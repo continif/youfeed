@@ -1,29 +1,36 @@
 <template>
   <div>
     <header class="mb-6">
-      <div class="flex items-baseline justify-between gap-3 flex-wrap">
-        <h1 class="text-2xl font-semibold flex items-center gap-2">
+      <h1 class="text-2xl font-semibold flex items-center flex-wrap gap-x-2 gap-y-1">
+        <template v-if="activeCategoryName">
           <RouterLink
-            v-if="activeTopicId"
+            :to="removeCategoryTo"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 transition-colors text-base leading-none shadow-sm"
+            aria-label="Rimuovi filtro categoria"
+            title="Rimuovi categoria"
+            >✕</RouterLink
+          >
+          <span>{{ activeCategoryName }}</span>
+        </template>
+        <span
+          v-if="activeCategoryName && activeTopicId"
+          class="text-slate-400 dark:text-slate-500 font-normal"
+          >—</span
+        >
+        <template v-if="activeTopicId">
+          <RouterLink
             :to="removeTopicTo"
             class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 transition-colors text-base leading-none shadow-sm"
             aria-label="Rimuovi filtro topic"
-            title="Rimuovi filtro"
+            title="Rimuovi topic"
             >✕</RouterLink
           >
-          <span v-if="activeCategoryName">{{ activeCategoryName }}</span>
-          <span v-else-if="activeTopicId" class="text-blue-600">
+          <span class="text-blue-600">
             #{{ activeTopicLabel || `topic ${activeTopicId}` }}
           </span>
-          <span v-else>Il mio feed</span>
-        </h1>
-        <RouterLink
-          v-if="activeCategoryId && !activeTopicId"
-          to="/me/feed"
-          class="text-sm text-blue-600 hover:underline"
-          >× Rimuovi filtro</RouterLink
-        >
-      </div>
+        </template>
+        <span v-if="!activeCategoryName && !activeTopicId">Il mio feed</span>
+      </h1>
 
       <!-- Box info topic — si materializza se il topic ha enrichment Wikidata -->
       <aside
@@ -192,6 +199,13 @@ const removeTopicTo = computed(() => {
   return activeCategoryId.value
     ? `/me/feed/${activeCategoryId.value}`
     : "/me/feed";
+});
+
+// Link per rimuovere SOLO il filtro categoria, preservando il topic attivo
+const removeCategoryTo = computed(() => {
+  return activeTopicId.value
+    ? { path: "/me/feed", query: { topic: String(activeTopicId.value) } }
+    : { path: "/me/feed" };
 });
 
 // Carica l'albero categorie una volta (per visualizzare il nome del filtro)

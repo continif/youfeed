@@ -1,0 +1,11 @@
+[Unit]
+Description=YOUFEED — schedule pulizia log Apache vhost (daily 03:15 UTC)
+
+[Timer]
+# Daily 03:15 (UTC) — dopo yf-manage-partitions (02:30) per evitare I/O contention
+OnCalendar=*-*-* 03:15:00 UTC
+Persistent=true
+Unit=yf-log-cleanup.service
+
+[Install]
+WantedBy=timers.target

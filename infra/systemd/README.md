@@ -12,6 +12,7 @@ Da copiare in `/etc/systemd/system/` sul server di produzione.
 | `yf-manage-partitions.{service,timer}` | partition maintenance giornaliera (02:30 UTC) |
 | `yf-reclassify-topics.{service,timer}` | reclassify articoli 2x/giorno (04:00 + 16:00 UTC) per riassorbire correzioni admin sui topic |
 | `yf-topics-snapshot.{service,timer}` | backup Parquet topics ogni notte (03:00 UTC) |
+| `yf-log-cleanup.{service,timer}` | compress + retention Apache vhost logs (daily 03:15 UTC) |
 
 ## Code v1.0
 
@@ -50,6 +51,10 @@ sudo systemctl enable --now yf-reclassify-topics.timer
 # Backup Parquet dei topic — 03:00 UTC, file unico sovrascritto in
 # /opt/youfeed/data/topics-snapshot.parquet
 sudo systemctl enable --now yf-topics-snapshot.timer
+
+# Compress + retention dei log Apache vhost — 03:15 UTC
+# gzip dopo 7gg, delete dei .gz dopo 30gg
+sudo systemctl enable --now yf-log-cleanup.timer
 ```
 
 Per ispezionarli:

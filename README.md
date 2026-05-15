@@ -82,6 +82,7 @@ Tutti sotto [`infra/scripts/`](infra/scripts/). Tipicamente lanciati dalla root 
 | [`backup.sh`](infra/scripts/backup.sh) | `pg_dump --format=custom` + `BACKUP TABLE` Manticore + `rsync --link-dest` immagini. Destinazione `${BACKUP_DIR:-/var/backups/youfeed}/<TS>/` con retention 14 giorni. | Una volta al giorno via cron (TODO: configurare upload offsite). |
 | [`maxmind-refresh.sh`](infra/scripts/maxmind-refresh.sh) | Scarica le MMDB di GeoLite2 (ASN + Country) usando `MAXMIND_LICENSE_KEY`. Refresha la cache country JSON sul server. | Una volta al mese via cron. |
 | [`check-personalization.sh`](infra/scripts/check-personalization.sh) | Diagnostica end-to-end della pipeline eventi tracking: stato worker + coda Redis + breakdown `activity_log` per `event_type` + counter `articles.read_count`. Accetta una finestra temporale come argomento (default `24h`, es. `1h` / `7d`). | Quando vuoi verificare che gli eventi Phase 1 (preview_open, original_open, ecc.) stiano davvero entrando, o per debugging di lag worker. |
+| [`log-cleanup.sh`](infra/scripts/log-cleanup.sh) | Compressione + retention dei log Apache vhost (`logs/access.YYYY-MM-DD.log`, `error.YYYY-MM-DD.log`). Gzip dopo 7gg, delete dei `.gz` dopo 30gg. Override via env `KEEP_PLAIN_DAYS` / `KEEP_GZ_DAYS` / `LOG_DIR`. | Auto-eseguito da `yf-log-cleanup.timer` (daily 03:15 UTC). Manuale per cleanup ad-hoc su disco pieno. |
 
 ### Permessi e sudo
 

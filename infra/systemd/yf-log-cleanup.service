@@ -1,0 +1,14 @@
+[Unit]
+Description=YOUFEED — pulizia/compressione log Apache vhost
+After=network.target
+
+[Service]
+Type=oneshot
+User=youfeed
+Group=youfeed
+WorkingDirectory=/opt/youfeed
+ExecStart=/opt/youfeed/infra/scripts/log-cleanup.sh
+
+# Logging via journald (default)
+StandardOutput=journal
+StandardError=journal

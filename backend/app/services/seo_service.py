@@ -123,6 +123,8 @@ def build_robots_txt(*, base_url: str, allow_indexing: bool = True) -> str:
 
     # NB: /register è ora indicizzabile (compare in sitemap), gli altri
     # flussi auth restano disallow per non disperdere crawl budget.
+    # NIENTE Disallow: /static/ — Google ha bisogno di leggere CSS/JS per
+    # renderizzare la pagina e valutarla (Mobile-Friendly + Core Web Vitals).
     return (
         "User-agent: *\n"
         "Allow: /\n"
@@ -133,6 +135,5 @@ def build_robots_txt(*, base_url: str, allow_indexing: bool = True) -> str:
         "Disallow: /verify-email-pending\n"
         "Disallow: /forgot-password\n"
         "Disallow: /reset-password\n"
-        "Disallow: /static/\n"
         f"\nSitemap: {base}/sitemap.xml\n"
     )

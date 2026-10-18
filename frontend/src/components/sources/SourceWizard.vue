@@ -267,7 +267,26 @@ async function onConfirm() {
       linkError.value = "Seleziona una categoria.";
       return;
     }
-    const us = await linkSource(sourceIdToLink.value, catId);
+    let sourceId = sourceIdToLink.value;
+    // Il discovery persiste solo il primo feed candidato: se l'utente ne ha
+    // scelto un altro dello stesso sito, lo qualifichiamo direttamente (URL
+    // di feed → Source dedicata) e colleghiamo quella.
+    const d = discovery.value;
+    if (
+      d &&
+      d.kind === "rss" &&
+      chosenFeedUrl.value &&
+      d.candidates.length > 1 &&
+      chosenFeedUrl.value !== d.url_feed
+    ) {
+      const chosen = await discoverUrl(chosenFeedUrl.value);
+      if (chosen.kind === "invalid" || chosen.source_id === null) {
+        linkError.value = chosen.reason ?? "Il feed selezionato non è valido.";
+        return;
+      }
+      sourceId = chosen.source_id;
+    }
+    const us = await linkSource(sourceId, catId);
     emit("added", us.id);
   } catch (err) {
     const apiErr = await extractError(err);

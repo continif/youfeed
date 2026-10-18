@@ -245,7 +245,9 @@ async def timeline_global_public(
     subq = (
         select(UserSource.source_id)
         .join(Category, Category.id == UserSource.category_id)
+        .join(Source, Source.id == UserSource.source_id)
         .where(Category.is_public == True)  # noqa: E712
+        .where(or_(Source.lang.is_(None), Source.lang == "it"))  # solo engine
         .distinct()
     )
     return await _query_timeline(

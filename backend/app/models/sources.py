@@ -41,6 +41,9 @@ class Source(Base, TimestampMixin):
     url_feed: Mapped[str | None] = mapped_column(Text, nullable=True, unique=True)
     wp_api_root: Mapped[str | None] = mapped_column(Text, nullable=True, unique=True)
     title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Lingua rilevata (it/en/...). NULL = sconosciuta, trattata come italiana.
+    # Fonti non italiane: visibili solo a chi le ha aggiunte, fuori dall'engine.
+    lang: Mapped[str | None] = mapped_column(String(8), nullable=True)
     favicon_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
     poll_interval: Mapped[int] = mapped_column(Integer, nullable=False, default=1800)

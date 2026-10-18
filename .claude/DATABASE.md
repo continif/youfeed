@@ -99,6 +99,7 @@ sources                                   -- fonte normalizzata, condivisa tra u
   url_site        text
   url_feed        text                    -- per kind='rss'
   wp_api_root     text                    -- per kind='wordpress_api'
+  lang            varchar(8)              -- lingua rilevata (it/en/...); NULL=ignota→italiana. Non-it: fuori dall'engine (no topic, no ricerca/vetrina pubblica)
   title           text
   favicon_url     text
   status          text                    -- 'pending' | 'active' | 'broken' | 'paused'

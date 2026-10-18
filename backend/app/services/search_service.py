@@ -52,6 +52,16 @@ async def _user_source_ids(session: AsyncSession, user_id: int) -> list[int]:
     return [int(r[0]) for r in rows]
 
 
+async def _foreign_source_ids(session: AsyncSession) -> list[int]:
+    """Id delle sources con lingua rilevata diversa dall'italiano."""
+    rows = (
+        await session.execute(
+            select(Source.id).where(Source.lang.is_not(None), Source.lang != "it")
+        )
+    ).all()
+    return [int(r[0]) for r in rows]
+
+
 async def search(
     session: AsyncSession,
     *,
@@ -77,8 +87,16 @@ async def search(
             # Utente senza source iscritte → nessun risultato.
             return [], 0
 
+    # Ricerca pubblica: le fonti non italiane sono fuori dall'engine.
+    exclude_ids = await _foreign_source_ids(session) if user_id is None else None
+
     result = await manticore_client.search_articles(
-        query, source_ids=source_ids, limit=limit, offset=offset, highlight=True,
+        query,
+        source_ids=source_ids,
+        exclude_source_ids=exclude_ids,
+        limit=limit,
+        offset=offset,
+        highlight=True,
     )
     total = int(result.get("total") or 0)
     hits_raw = result.get("hits") or []
@@ -160,6 +178,7 @@ async def suggest(
         await session.execute(
             select(Source.id, Source.title, Source.url_site)
             .where(Source.status == "active")
+            .where(or_(Source.lang.is_(None), Source.lang == "it"))
             .where(or_(
                 Source.title.ilike(like),
                 Source.title.ilike(ilike),

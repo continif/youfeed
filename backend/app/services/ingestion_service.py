@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ingestion.classify import TopicMatch
+from app.ingestion.lang import detect_language
 from app.ingestion.feed_parser import ArticleCandidate
 from app.models import Article, ArticleTopic, Source
 
@@ -49,6 +50,15 @@ async def ingest_candidates(
     candidates: Iterable[ArticleCandidate],
 ) -> list[int]:
     """Inserisce gli articoli nuovi e ritorna gli id appena creati."""
+    candidates = list(candidates)
+    # Prima del process_article: il worker legge `source.lang` per decidere
+    # se l'articolo entra nell'engine.
+    if source.lang is None:
+        source.lang = detect_language(
+            f"{c.title} {(c.description or '')[:200]}" for c in candidates
+        )
+        if source.lang:
+            log.info("yf.ingest.lang_detected", source_id=int(source.id), lang=source.lang)
     rows = []
     for c in candidates:
         rows.append(

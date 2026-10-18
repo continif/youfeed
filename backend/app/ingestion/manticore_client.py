@@ -159,6 +159,7 @@ async def search_articles(
     query: str,
     *,
     source_ids: list[int] | None = None,
+    exclude_source_ids: list[int] | None = None,
     limit: int = 20,
     offset: int = 0,
     highlight: bool = True,
@@ -171,6 +172,8 @@ async def search_articles(
         content_text (morphology italiana via libstemmer_it).
       - `source_ids`: se passato (non None), restringe a quel set (per il
         feed utente loggato → solo le sue sources iscritte).
+      - `exclude_source_ids`: sources da escludere (ricerca pubblica: fonti
+        non italiane, fuori dall'engine).
 
     Ritorna dict pronto:
       {
@@ -215,6 +218,10 @@ async def search_articles(
             return {"total": 0, "hits": []}
         payload["query"]["bool"]["filter"] = [
             {"in": {"source_id": [int(s) for s in source_ids]}}
+        ]
+    if exclude_source_ids:
+        payload["query"]["bool"]["must_not"] = [
+            {"in": {"source_id": [int(s) for s in exclude_source_ids]}}
         ]
     if highlight:
         payload["highlight"] = {

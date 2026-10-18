@@ -37,11 +37,11 @@ from typing import Any
 
 import structlog
 from selectolax.parser import HTMLParser
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.db import dispose_engine, get_session_factory
 from app.ingestion import classify, manticore_client
-from app.models import Article
+from app.models import Article, Source
 from app.services import ingestion_service
 
 log = structlog.get_logger()
@@ -82,7 +82,13 @@ async def _select_articles(
 ) -> list[Article]:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(Article).where(Article.processing_status == "indexed")
+        stmt = (
+            select(Article)
+            .join(Source, Source.id == Article.source_id)
+            .where(Article.processing_status == "indexed")
+            # Fonti non italiane: fuori dall'engine, niente topic.
+            .where(or_(Source.lang.is_(None), Source.lang == "it"))
+        )
         if source_id is not None:
             stmt = stmt.where(Article.source_id == source_id)
         if not all_indexed and source_id is None:

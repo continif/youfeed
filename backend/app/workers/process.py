@@ -19,6 +19,7 @@ from sqlalchemy import select
 
 from app.db import get_session_factory
 from app.ingestion import classify, manticore_client, normalize
+from app.ingestion.lang import is_engine_language
 from app.ingestion.feed_parser import ArticleCandidate, make_url_hash
 from app.models import Article, Source, Topic
 from app.services import ingestion_service
@@ -83,13 +84,18 @@ async def _process_async(article_id: int) -> None:
         # troppo rumore (citazioni di brand/personaggi non centrali al pezzo).
         # I topic vengono estratti SOLO dal titolo, che è la sintesi più densa
         # del tema dell'articolo.
+        # Fonti non italiane: niente classify → niente topic (né auto-topic
+        # NER/regex). L'articolo resta indicizzato per chi ha la fonte.
         title = candidate.title
-        matches = await classify.classify(
-            session,
-            title=title,
-            body_text="",
-            origin_taxonomy=None,
-        )
+        if is_engine_language(source.lang):
+            matches = await classify.classify(
+                session,
+                title=title,
+                body_text="",
+                origin_taxonomy=None,
+            )
+        else:
+            matches = []
         n_topics = await ingestion_service.apply_classification(
             session, article_id=article_id, matches=matches
         )

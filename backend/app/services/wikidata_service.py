@@ -163,6 +163,7 @@ TYPE_TO_P31_WHITELIST: dict[str, frozenset[str]] = {
         "Q327333",    # government agency
         "Q2659904",   # government organization
         "Q7188",      # government
+        "Q699386",    # ente / statutory corporation (es. INPS, INAIL)
     }),
     "software": frozenset({
         "Q7397",      # software
@@ -256,6 +257,12 @@ def infer_type_from_p31(p31_qids: set[str]) -> str | None:
         if wl and (p31_qids & wl):
             return t
     return None
+
+
+# Famiglia "organizzazioni": un topic nato come brand (tipo assegnato dal NER
+# per ogni ORG) può essere riclassificato dentro questa famiglia quando
+# Wikidata dice che è un ente/organizzazione e non un'azienda (es. INPS).
+_ORG_FAMILY: frozenset[str] = frozenset({"brand", "company", "organization"})
 
 
 def _extract_p31_qids(entity: dict[str, Any]) -> set[str]:
@@ -362,7 +369,9 @@ def _tokenize(s: str) -> set[str]:
     return set(_WORD_BOUNDARY.findall(s.lower()))
 
 
-def _score_hit(term_norm: str, hit: dict[str, Any]) -> tuple[float, str] | None:
+def _score_hit(
+    term_norm: str, hit: dict[str, Any], *, raw_term_is_not_upper: bool = False
+) -> tuple[float, str] | None:
     """Calcola (confidence, method) per un hit di wbsearchentities.
 
     Considera match.type + match.language (label_it_exact > label_en_exact >
@@ -375,6 +384,20 @@ def _score_hit(term_norm: str, hit: dict[str, Any]) -> tuple[float, str] | None:
     matched_text = (match.get("text") or "").strip().lower()
     label = (hit.get("label") or "").strip().lower()
     aliases_inline = [a.lower() for a in (hit.get("aliases") or [])]
+
+    # Lingue diverse da it/en (es. 'mul') = sigle omonime di entità estere
+    # (INPS → "Indah Prakasa Sentosa"): mai affidabili.
+    if matched_lang not in ("it", "en"):
+        return None
+    # Match solo inglese: serve almeno una description (le entità senza
+    # description sono quasi sempre stub rumorosi) e un'etichetta TUTTO
+    # MAIUSCOLO non può valere per una parola normale (Fisco ≠ FISCO).
+    if matched_lang == "en":
+        if not (hit.get("description") or "").strip():
+            return None
+        raw_label = (hit.get("label") or "").strip()
+        if len(raw_label) >= 3 and raw_label.isupper() and raw_term_is_not_upper:
+            return None
 
     # 1. exact match: API ha trovato un label/alias che combacia esattamente
     if matched_text == term_norm:
@@ -592,7 +615,9 @@ async def enrich_topic(
         # 2. Score per label/alias match; raccogli i candidati > threshold
         candidates: list[WikidataMatch] = []
         for h in hits:
-            sc = _score_hit(term_norm, h)
+            sc = _score_hit(
+                term_norm, h, raw_term_is_not_upper=not topic.display_name.isupper()
+            )
             if sc is None:
                 continue
             conf, method = sc
@@ -616,11 +641,24 @@ async def enrich_topic(
 
         best: WikidataMatch | None = None
         entity: dict[str, Any] | None = None
+        retype_to: str | None = None
         for cand in top_n:
             ent = entities.get(cand.qid)
             if ent is None:
                 continue
             if not _type_compatible(ent, topic.type):
+                # Match italiano esatto ma P31 di altro tipo "organizzativo":
+                # il topic è un ente, non un brand → riclassifica.
+                inferred = infer_type_from_p31(_extract_p31_qids(ent))
+                if (
+                    cand.confidence >= 1.0
+                    and topic.type in _ORG_FAMILY
+                    and inferred in _ORG_FAMILY
+                ):
+                    best = cand
+                    entity = ent
+                    retype_to = inferred
+                    break
                 log.debug(
                     "yf.wikidata.type_mismatch",
                     topic_id=topic_id,
@@ -662,6 +700,18 @@ async def enrich_topic(
                     if lbl:
                         item["label"] = lbl
 
+        if retype_to and retype_to != topic.type:
+            log.info(
+                "yf.wikidata.retype", topic_id=topic_id, old=topic.type, new=retype_to
+            )
+            topic.type = retype_to
+        # Etichette ufficiali (es. "Istituto nazionale della previdenza
+        # sociale" per INPS) come alias: migliorano il match nei titoli.
+        labels_block = entity.get("labels") or {}
+        for lang in ("it", "en"):
+            v = (labels_block.get(lang) or {}).get("value", "").strip()
+            if v and v.lower() != topic.display_name.strip().lower():
+                new_aliases.append(v)
         if description and (force or not topic.description):
             topic.description = description
         topic.aliases = _merge_aliases(topic.aliases, new_aliases) or topic.aliases

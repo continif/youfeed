@@ -61,6 +61,9 @@ _NER_TOKEN_BLACKLIST: frozenset[str] = frozenset({
     "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica",
     # parole generiche italiane comuni in titoli che spaCy a volte tagga come PER/ORG
     "colpo", "cosa", "dunque", "grado", "anno", "mese", "giorno", "ora",
+    # nomi comuni di istituzioni/enti generici: spaCy li tagga ORG, Wikidata
+    # li aggancia a omonimi esteri (Fisco → società giapponese)
+    "fisco", "erario",
     "italia",  # troppo generico come "LOC" — escluso se vuoi tracciare nazione c'è già curated
 })
 

@@ -122,6 +122,62 @@ In caso di errore: `journalctl -u yf-api -n 200` e verifica che PG/Redis/Mantico
 # 3. Riavvio dei servizi: systemctl restart yf-*
 ```
 
+## Manutenzione topic e fonti
+
+Comandi Python da lanciare in `backend/` con il virtualenv attivo (non sono
+comandi di shell: `python -m app.utils.<nome>`). Quelli che scrivono sono
+dry-run finché non passi `--apply`.
+
+### Lingua delle fonti (`backfill_source_lang`)
+
+YouFeed è IT-only: le fonti non italiane (es. inglesi) restano visibili solo a
+chi le ha aggiunte, fuori da topic, ricerca pubblica e vetrina. La lingua viene
+rilevata in automatico alla prima ingestion (`sources.lang`); per le fonti
+già presenti:
+
+```bash
+python -m app.utils.backfill_source_lang           # dry-run: elenca le fonti non italiane
+python -m app.utils.backfill_source_lang --apply   # scrive lang e rimuove i loro article_topics
+```
+
+Dopo l'`--apply` i topic auto rimasti orfani si eliminano con
+`prune_unused_topics`. Per allineare anche Manticore: `python -m app.utils.reindex`.
+Se una fonte inglese non viene riconosciuta, controlla `sources.lang`: `NULL`
+significa "non rilevata" ed è trattata come italiana.
+
+### Pulizia topic a 0 articoli (`prune_unused_topics`)
+
+```bash
+python -m app.utils.prune_unused_topics                    # dry-run: conteggio per tipo
+python -m app.utils.prune_unused_topics --apply
+python -m app.utils.prune_unused_topics --apply --include-curated   # SCONSIGLIATO
+```
+
+Di default tocca solo i topic auto (`is_curated=false`). Non cancella mai i
+topic `invalid` (sono il blocklist che impedisce all'extractor di ricrearli) né
+quelli seguiti da un alert. I curated del dizionario seed (comuni, brand) hanno
+quasi tutti 0 articoli per natura: `--include-curated` svuota il dizionario,
+da usare solo dopo un backup.
+
+### Topic mal agganciati a Wikidata (`refresh_topics`)
+
+```bash
+python -m app.utils.refresh_topics --help
+python -m app.utils.refresh_topics --reenrich --limit 100   # prova su un lotto
+python -m app.utils.refresh_topics --reenrich --all
+```
+
+`--reenrich` rifà le chiamate a Wikidata (pausa 1-5 s tra una e l'altra: su
+molti topic è lento). Un topic sbagliato che non è una vera entità (es. nomi
+comuni come "Fisco") va invece invalidato da `/yf_admin/topics`.
+
+### Aggiunta di più feed dello stesso sito
+
+Nel wizard "Aggiungi fonte", se il sito espone più feed si sceglie quale
+collegare; ogni feed è una fonte distinta. Limite noto: un articolo presente in
+due feed resta legato alla prima fonte che l'ha ingerito, quindi chi aggiunge
+solo il feed di categoria vede gli articoli non già visti dal feed principale.
+
 ## Incidenti tipici
 
 ### "L'API non risponde"

@@ -121,6 +121,8 @@ class Settings(BaseSettings):
     # ---- Admin panel (HTTP Basic via .env, plaintext in v1) ----
     admin_username: str = ""
     admin_password: str = ""
+    # Bearer token (sola lettura) per l'export blocklist IP; vuoto = disabilitato.
+    security_export_token: str = ""
 
     @property
     def is_production(self) -> bool:

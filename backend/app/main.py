@@ -36,6 +36,7 @@ from app.routers import (
     public,
     push,
     search,
+    security_export,
     seo,
     sources,
     topics,
@@ -103,6 +104,7 @@ def create_app() -> FastAPI:
     app.include_router(public.router)
     app.include_router(seo.router)  # /sitemap.xml + /robots.txt
     app.include_router(admin.router)  # /yf_admin/* (HTTP Basic via .env)
+    app.include_router(security_export.router)  # /yf_data/security/blocked-ips.txt (Bearer)
 
     # Static files per le pagine pubbliche (CSS/JS Jinja2). In prod
     # Apache li serve direct; in dev li monta uvicorn.

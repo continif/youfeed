@@ -178,6 +178,21 @@ collegare; ogni feed è una fonte distinta. Limite noto: un articolo presente in
 due feed resta legato alla prima fonte che l'ha ingerito, quindi chi aggiunge
 solo il feed di categoria vede gli articoli non già visti dal feed principale.
 
+### Export blocklist IP (firewall / fail2ban)
+
+```bash
+curl -H "Authorization: Bearer $SECURITY_EXPORT_TOKEN" \
+  https://www.youfeed.it/yf_data/security/blocked-ips.txt
+```
+
+Un IP per riga: gli IP bannati nelle **ultime 24 ore** e ancora attivi
+(permanenti o con scadenza futura). Un ban più vecchio di 24 ore non compare,
+anche se ancora attivo; un IP che ri-colpisce uno scanner estende la scadenza
+ma non la data di creazione. Il token è `SECURITY_EXPORT_TOKEN` nel `.env`
+(genera con `openssl rand -hex 32`, solo lettura, ruotabile senza toccare le
+credenziali admin); se vuoto l'endpoint risponde sempre 401. Riavvia `yf-api`
+dopo averlo impostato.
+
 ## Incidenti tipici
 
 ### "L'API non risponde"

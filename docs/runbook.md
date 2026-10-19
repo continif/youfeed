@@ -185,10 +185,8 @@ curl -H "Authorization: Bearer $SECURITY_EXPORT_TOKEN" \
   https://www.youfeed.it/yf_data/security/blocked-ips.txt
 ```
 
-Un IP per riga: gli IP bannati nelle **ultime 24 ore** e ancora attivi
-(permanenti o con scadenza futura). Un ban più vecchio di 24 ore non compare,
-anche se ancora attivo; un IP che ri-colpisce uno scanner estende la scadenza
-ma non la data di creazione. Il token è `SECURITY_EXPORT_TOKEN` nel `.env`
+Un IP per riga: tutti i ban **attivi** (permanenti o con scadenza futura);
+i ban scaduti non compaiono. Il token è `SECURITY_EXPORT_TOKEN` nel `.env`
 (genera con `openssl rand -hex 32`, solo lettura, ruotabile senza toccare le
 credenziali admin); se vuoto l'endpoint risponde sempre 401. Riavvia `yf-api`
 dopo averlo impostato.

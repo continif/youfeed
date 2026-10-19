@@ -1,7 +1,7 @@
 """Export della blocklist IP per consumer esterni (firewall, fail2ban, ...).
 
-`GET /yf_data/security/blocked-ips.txt` — un IP per riga, solo gli IP
-bannati nelle ultime 24 ore e ancora attivi (permanenti o con scadenza futura).
+`GET /yf_data/security/blocked-ips.txt` — un IP per riga, tutti gli IP con
+ban attivo (permanenti o con scadenza futura).
 
 Auth: `Authorization: Bearer <SECURITY_EXPORT_TOKEN>` (token in `.env`,
 sola lettura, ruotabile senza toccare le credenziali admin). Senza token
@@ -11,7 +11,7 @@ configurato l'endpoint risponde sempre 401 (export disabilitato).
 from __future__ import annotations
 
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Header, HTTPException, status
 from fastapi.responses import PlainTextResponse
@@ -23,8 +23,6 @@ from app.deps import DB
 from app.models.security import BlockedIp
 
 router = APIRouter(prefix="/yf_data/security", tags=["security-export"])
-
-EXPORT_WINDOW = timedelta(hours=24)
 
 
 def _check_token(authorization: str | None) -> None:
@@ -45,11 +43,10 @@ def _check_token(authorization: str | None) -> None:
 async def recent_blocked_ips(
     session: AsyncSession, *, now: datetime | None = None
 ) -> list[str]:
-    """IP bannati nelle ultime 24h e ancora attivi, ordinati per IP."""
+    """Tutti gli IP con ban attivo (permanente o non scaduto), ordinati per IP."""
     now = now or datetime.now(UTC)
     res = await session.execute(
         select(BlockedIp.ip)
-        .where(BlockedIp.created_at >= now - EXPORT_WINDOW)
         .where(or_(BlockedIp.expires_at.is_(None), BlockedIp.expires_at > now))
         .order_by(BlockedIp.ip)
     )
